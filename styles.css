@@ -40,41 +40,45 @@ body {
 /* Navigation */
 .top-nav {
     display: flex;
-    justify-content: space-between;
-    /* Space between text (left) and settings (right) */
-    align-items: center;
-    padding: 20px;
+    flex-direction: column;
+    padding: 15px 20px 10px 20px;
     background: rgba(240, 244, 248, 0.85);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 100;
-    min-height: 120px;
 }
 
-/* New class for the absolute centered logo */
-.logo-center {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    height: 110px;
-    /* User requested 110px */
+.nav-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.nav-row-bottom {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    /* Space between buttons */
+    width: 100%;
+    margin-top: 5px;
+}
+
+.logo-right {
+    height: 50px;
     width: auto;
     mix-blend-mode: multiply;
-    /* Dynamically removes solid white background */
-    z-index: 1;
-    pointer-events: none;
-    /* prevent blocking clicks on items behind it */
 }
 
-
-
 .brand-text {
-    font-size: 1.6rem;
+    font-size: 1.2rem;
     font-weight: 900;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
+    line-height: 1;
+    padding-top: 8px;
+    /* align with logo slightly */
 }
 
 .brand-text .calorie {
@@ -91,13 +95,10 @@ body {
     background: none;
     border: none;
     color: var(--text-main);
-    /* Siva boja iz postavki (ili #000) */
-    font-size: 1.8rem;
-    /* Povećali ikonu zupčanika (cog) */
+    font-size: 1.5rem;
     cursor: pointer;
     z-index: 2;
-    padding: 5px;
-    /* Dodan padding radi lakšeg dodira no mobitelu */
+    padding: 10px;
 }
 
 /* Screens */

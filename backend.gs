@@ -43,7 +43,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
 
-    if (action === "analyzeMeal") {
+    if (action === "analyzeMeal" || action === "analyzeImage") {
       // Šaljemo parametre funkciji (bilo sliku, bilo tekstualni opis)
       const result = analyzeWithGemini({
         imageBase64: data.imageBase64,
