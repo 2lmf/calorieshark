@@ -160,8 +160,11 @@
     <div id="screenStats" class="screen hidden" style="padding-top: 80px;">
         <div
             style="background: var(--bg-card); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px;">
-            <h3 style="color:var(--text-main); margin-bottom:15px; text-align:center;"><i
+            <h3 style="color:var(--text-main); margin-bottom:5px; text-align:center;"><i
                     class="fas fa-cloud-download-alt" style="color:var(--accent-cyan);"></i> Tvoj Cloud Dnevnik</h3>
+            <div style="text-align:center; font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+                Tvoj dnevni cilj (TDEE): <strong style="color:var(--accent-orange);" id="lblStatsTDEE">0</strong> kcal
+            </div>
             <canvas id="kcalChart" width="400" height="200"></canvas>
         </div>
 

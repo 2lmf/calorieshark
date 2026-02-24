@@ -791,15 +791,21 @@ function renderStatsUI(meals) {
         dailySums[shortDate] += m.totals.kcal;
     });
 
-    // Chart.js očekuje nizove za X i Y os (moramo ih obrnuti jer su sortirani od najnovijeg nazad)
     const labels = Object.keys(dailySums).reverse();
     const dataKcal = Object.values(dailySums).reverse();
 
+    // Osiguravamo da je TDEE broj kako Chart.js ne bi odbio iscrtati liniju zbog greške u tipu podatka
+    const numericTDEE = parseFloat(userProfile.tdee) || 2000;
+
+    // Ažuriranje teksta na UI
+    const targetLabel = document.getElementById('lblStatsTDEE');
+    if (targetLabel) targetLabel.textContent = numericTDEE;
+
     // TDEE linija (Target) kreira se ispunjavajući niz istim brojem
-    const tdeeLine = Array(labels.length).fill(userProfile.tdee);
+    const tdeeLine = Array(labels.length).fill(numericTDEE);
 
     // Bojanje stupaca (Crveno ako prelazi TDEE, Lagana plava ako je ispod)
-    const barColors = dataKcal.map(val => val > userProfile.tdee ? '#FF2A2A' : '#00A8B5');
+    const barColors = dataKcal.map(val => val > numericTDEE ? '#FF2A2A' : '#00A8B5');
 
     // Crtanje Grafa
     const ctx = document.getElementById('kcalChart').getContext('2d');
