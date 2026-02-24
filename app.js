@@ -44,8 +44,15 @@ const btnCancelCrop = document.getElementById('btnCancelCrop');
 const btnConfirmCrop = document.getElementById('btnConfirmCrop');
 let cropperInstance = null;
 
+// PWA Install Prompt
+let deferredPrompt;
+const installModal = document.getElementById('installModal');
+const btnCancelInstall = document.getElementById('btnCancelInstall');
+const btnConfirmInstall = document.getElementById('btnConfirmInstall');
+
 // --- INITIALIZATION ---
 function init() {
+    registerServiceWorker();
     loadProfile();
     loadDailyData();
     bindEvents();
@@ -191,6 +198,44 @@ function showScreen(screenId) {
         document.querySelector('.brand-text').onclick = () => showScreen('dashboard');
         document.querySelector('.brand-text').style.cursor = 'pointer';
     }
+}
+
+// PWA Service Worker & Install Logic
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('Service Worker Registriran'))
+            .catch(err => console.error('Service Worker Greska:', err));
+    }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default Chrome mini-infobar
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show our custom modal if they haven't installed it
+    setTimeout(() => {
+        installModal.classList.remove('hidden');
+    }, 2000); // Pokazi 2 sekunde nakon loada
+});
+
+if (btnCancelInstall && btnConfirmInstall) {
+    btnCancelInstall.addEventListener('click', () => {
+        installModal.classList.add('hidden');
+        deferredPrompt = null;
+    });
+
+    btnConfirmInstall.addEventListener('click', async () => {
+        installModal.classList.add('hidden');
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            // We've used the prompt, and can't use it again, throw it away
+            deferredPrompt = null;
+        }
+    });
 }
 
 function updateDashboardUI() {
