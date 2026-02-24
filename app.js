@@ -53,8 +53,8 @@ const btnConfirmInstall = document.getElementById('btnConfirmInstall');
 // --- INITIALIZATION ---
 function init() {
     registerServiceWorker();
-    loadProfile();
     loadDailyData();
+    loadProfile();
     bindEvents();
 }
 

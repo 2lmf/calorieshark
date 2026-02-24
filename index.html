@@ -33,21 +33,23 @@
 
     <!-- TOP NAVIGATION BAR -->
     <nav class="top-nav">
-        <!-- ROW 1: BRAND + BUTTONS -->
-        <div class="nav-row-top">
+        <!-- BRANDING (Left) -->
+        <div class="brand-container" style="display: flex; flex-direction: column;">
             <div class="brand-text">
                 <span class="calorie">CALORIE</span><span class="shark">SHARK</span>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button id="btnStats" class="icon-btn" title="Statistika Cloud Dnevnika"><i
-                        class="fas fa-chart-line"></i></button>
-                <button id="btnSettings" class="icon-btn" title="Postavke"><i class="fas fa-cog"></i></button>
+            <div class="sub-brand" style="font-size: 0.75rem; font-weight: 700; margin-top: 2px;">
+                <span style="color: var(--text-muted);">by </span><span
+                    style="color: var(--accent-cyan);">Sharp</span><span
+                    style="color: var(--accent-orange);">Shark</span>
             </div>
         </div>
 
-        <!-- ROW 2: CENTERED LOGO -->
-        <div class="nav-row-bottom">
-            <img src="assets/SharpShark_Logo_GreyOrange_Large.png" alt="SharpShark Logo" class="logo-center-row">
+        <!-- BUTTONS (Right) -->
+        <div style="display:flex; gap:10px; align-items: center;">
+            <button id="btnStats" class="icon-btn" title="Statistika Cloud Dnevnika"><i
+                    class="fas fa-chart-line"></i></button>
+            <button id="btnSettings" class="icon-btn" title="Postavke"><i class="fas fa-cog"></i></button>
         </div>
     </nav>
 

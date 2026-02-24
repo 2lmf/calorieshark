@@ -40,35 +40,16 @@ body {
 /* Navigation */
 .top-nav {
     display: flex;
-    flex-direction: column;
-    padding: 15px 20px 10px 20px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
     background: rgba(240, 244, 248, 0.85);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 0;
     z-index: 100;
-}
-
-.nav-row-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-}
-
-.nav-row-bottom {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-top: 8px;
-}
-
-.logo-center-row {
-    height: 75px;
-    width: auto;
-    mix-blend-mode: multiply;
 }
 
 .brand-text {
