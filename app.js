@@ -801,18 +801,20 @@ function renderStatsUI(meals) {
                     type: 'line',
                     label: 'TDEE Cilj',
                     data: tdeeLine,
-                    borderColor: '#2C3E50',
-                    borderWidth: 2,
+                    borderColor: '#E67E22', // High-contrast orange
+                    borderWidth: 3,
                     borderDash: [5, 5],
                     fill: false,
-                    pointRadius: 0
+                    pointRadius: 0,
+                    order: 1 // Draw line over bars
                 },
                 {
                     type: 'bar',
                     label: 'Unos (kcal)',
                     data: dataKcal,
                     backgroundColor: barColors,
-                    borderRadius: 4
+                    borderRadius: 4,
+                    order: 2
                 }
             ]
         },
