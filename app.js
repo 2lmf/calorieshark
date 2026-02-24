@@ -263,6 +263,12 @@ function updateDashboardUI() {
     if (percent > 1.0) progressCircle.style.stroke = '#FF2A2A'; // Red if over
     else progressCircle.style.stroke = 'var(--accent-cyan)';
 
+    // Ažuriranje brojčanih iznosa makrosa na UI (tako da kod ponovnog ulaska nema nula)
+    document.getElementById('lblKcalEaten').textContent = Math.round(dailyData.totalKcal);
+    document.getElementById('lblCarbs').textContent = Math.round(dailyData.carbs) + "g";
+    document.getElementById('lblProtein').textContent = Math.round(dailyData.protein) + "g";
+    document.getElementById('lblFat').textContent = Math.round(dailyData.fat) + "g";
+
     // Obavezno iscrtaj povijest
     renderDailyMeals();
 }
