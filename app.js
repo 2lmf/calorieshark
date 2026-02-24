@@ -837,7 +837,7 @@ function renderStatsUI(meals) {
                     borderWidth: 3,
                     borderDash: [5, 5],
                     fill: false,
-                    pointRadius: 0,
+                    pointRadius: 4,
                     order: 1 // Draw line over bars
                 },
                 {
