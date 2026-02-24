@@ -573,7 +573,7 @@ async function saveMealToServer() {
         }
 
         if (result.status === 'success') {
-            applyMealToDashboard(currentUnsavedMeal.items, totals);
+            applyMealToDashboard(currentUnsavedMeal.items, totals, result.insertedId);
             currentUnsavedMeal = null;
             mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-check-circle"></i><p>Obrok uspješno spremljen!</p></div>`;
             setTimeout(() => {
@@ -590,7 +590,7 @@ async function saveMealToServer() {
     }
 }
 
-function applyMealToDashboard(items, totals) {
+function applyMealToDashboard(items, totals, id = null) {
     dailyData.totalKcal += totals.kcal;
     dailyData.carbs += totals.carbs;
     dailyData.protein += totals.protein;
@@ -598,6 +598,7 @@ function applyMealToDashboard(items, totals) {
 
     // Spremamo obrok lokalno u niz za današnji dan
     dailyData.meals.push({
+        id: id,
         time: new Date().toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' }),
         items: items,
         totals: totals
@@ -676,15 +677,34 @@ function editMeal(index) {
     currentUnsavedMeal = JSON.parse(JSON.stringify({ items: dailyData.meals[index].items }));
 
     // Odmah obrišemo originalni obrok, tako da kada završi u "Pending UI" ponovno zbrajanje ne dupla podatke
-    deleteMeal(index);
-
-    // Skoči na vrh i nacrtaj pending UI sa tim starim stavkama
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    drawPendingMealUI();
+    deleteMeal(index).then(() => {
+        // Skoči na vrh i nacrtaj pending UI sa tim starim stavkama
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        drawPendingMealUI();
+    });
 }
 
-function deleteMeal(index) {
+async function deleteMeal(index) {
     const meal = dailyData.meals[index];
+    const mealId = meal.id;
+
+    // Ako ima ID iz clouda, proslijedi brisanje bazi u pozadini
+    if (mealId && API_URL) {
+        try {
+            fetch(API_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    action: 'deleteMeal',
+                    username: userProfile.username,
+                    id: mealId
+                })
+            }).catch(e => console.error("Cloud Error:", e));
+        } catch (e) {
+            console.warn("Nije uspjelo brisanje iz clouda.", e);
+        }
+    }
 
     // Oduzimanje makrosa
     dailyData.totalKcal -= meal.totals.kcal;

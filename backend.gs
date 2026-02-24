@@ -59,6 +59,12 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === "deleteMeal") {
+      const result = deleteMealLog(data.id, data.username);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", deleted: result }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (action === "getHistory") {
       const result = getMealHistory(data.username);
       return ContentService.createTextOutput(JSON.stringify({ status: "success", data: result }))
@@ -247,4 +253,30 @@ function getMealHistory(username) {
   userMeals.sort((a, b) => b.timestamp - a.timestamp);
   
   return userMeals;
+}
+
+// ==========================================
+// BRISANJE OBROKA IZ BAZE
+// ==========================================
+function deleteMealLog(id, username) {
+  if (!id || !username) return false;
+
+  const ss = SpreadsheetApp.openById("1xTr_ZfsZCpNEqahUwW0TxjFgI-guXPUQfePj-lRV1AI");
+  const logSheet = ss.getSheetByName(SHEET_NAME_LOGS);
+  if (!logSheet) return false;
+
+  const data = logSheet.getDataRange().getValues();
+  
+  // Idemo od zadnjeg prema prvom (jer je obrok najvjerojatnije pri dnu)
+  for (let i = data.length - 1; i >= 1; i--) {
+    const rowId = data[i][0]; // Stupac A (ID)
+    const rowUser = data[i][3]; // Stupac D (Username)
+
+    if (rowId === id && String(rowUser).toLowerCase() === String(username).toLowerCase()) {
+      logSheet.deleteRow(i + 1); // +1 jer array kreće od 0, a redovi u Sheetu od 1
+      return true;
+    }
+  }
+  
+  return false;
 }
