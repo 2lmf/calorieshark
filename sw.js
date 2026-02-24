@@ -1,5 +1,4 @@
-// Basic Service Worker to satisfy PWA install requirements
-const CACHE_NAME = 'calorieshark-v1';
+const CACHE_NAME = 'calorieshark-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -15,12 +14,39 @@ self.addEventListener('install', (event) => {
             return cache.addAll(ASSETS);
         })
     );
+    self.skipWaiting(); // Force the waiting service worker to become the active service worker
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    self.clients.claim(); // Tell the active service worker to take control of the page immediately
 });
 
 self.addEventListener('fetch', (event) => {
+    // Network First strategy
     event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
+        fetch(event.request)
+            .then((networkResponse) => {
+                return caches.open(CACHE_NAME).then((cache) => {
+                    if (event.request.method === 'GET') {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                });
+            })
+            .catch(() => {
+                return caches.match(event.request);
+            })
     );
 });
