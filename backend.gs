@@ -238,7 +238,7 @@ function getMealHistory(username) {
         });
       } catch(e) {
         // Preskoči red ako je JSON korumpiran
-continue;
+        continue;
       }
     }
   }
