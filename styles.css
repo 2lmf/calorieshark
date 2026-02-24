@@ -53,21 +53,20 @@ body {
 .nav-row-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     width: 100%;
 }
 
 .nav-row-bottom {
     display: flex;
     justify-content: center;
-    gap: 30px;
-    /* Space between buttons */
+    align-items: center;
     width: 100%;
-    margin-top: 5px;
+    margin-top: 8px;
 }
 
-.logo-right {
-    height: 50px;
+.logo-center-row {
+    height: 75px;
     width: auto;
     mix-blend-mode: multiply;
 }

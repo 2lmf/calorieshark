@@ -33,15 +33,21 @@
 
     <!-- TOP NAVIGATION BAR -->
     <nav class="top-nav">
+        <!-- ROW 1: BRAND + BUTTONS -->
         <div class="nav-row-top">
             <div class="brand-text">
                 <span class="calorie">CALORIE</span><span class="shark">SHARK</span>
             </div>
-            <img src="assets/SharpShark_Logo_GreyOrange_Large.png" alt="SharpShark Logo" class="logo-right">
+            <div style="display:flex; gap:10px;">
+                <button id="btnStats" class="icon-btn" title="Statistika Cloud Dnevnika"><i
+                        class="fas fa-chart-line"></i></button>
+                <button id="btnSettings" class="icon-btn" title="Postavke"><i class="fas fa-cog"></i></button>
+            </div>
         </div>
+
+        <!-- ROW 2: CENTERED LOGO -->
         <div class="nav-row-bottom">
-            <button id="btnStats" class="icon-btn"><i class="fas fa-chart-line"></i></button>
-            <button id="btnSettings" class="icon-btn"><i class="fas fa-cog"></i></button>
+            <img src="assets/SharpShark_Logo_GreyOrange_Large.png" alt="SharpShark Logo" class="logo-center-row">
         </div>
     </nav>
 
