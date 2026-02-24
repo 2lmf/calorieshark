@@ -20,7 +20,7 @@ let dailyData = {
 
 // --- CONFIGURATION ---
 // Povezano sa tvojim Google Apps Scriptom
-let API_URL = localStorage.getItem('calorieShark_apiUrl') || 'https://script.google.com/macros/s/AKfycbzydHpTGEyigElRio20Il0ga_S4awAnAlvrijkIFw789yc7xIDr40_q-OpcySKungel/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzydHpTGEyigElRio20Il0ga_S4awAnAlvrijkIFw789yc7xIDr40_q-OpcySKungel/exec';
 
 // --- DOM ELEMENTS ---
 const screens = {
@@ -83,19 +83,28 @@ function saveDailyData() {
 
 function loadProfile() {
     const saved = localStorage.getItem('calorieShark_profile');
-    const savedApi = localStorage.getItem('calorieShark_apiUrl');
 
     if (saved) {
         userProfile = JSON.parse(saved);
-        if (savedApi) API_URL = savedApi;
 
         // Populate inputs if they go back to settings
         document.getElementById('inpUsername').value = userProfile.username || '';
+        document.getElementById('inpAge').value = userProfile.age || 30;
+        document.getElementById('inpHeight').value = userProfile.height || 180;
+        document.getElementById('inpWeight').value = userProfile.weight || 85;
+
+        // Populate active gender
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            if (btn.dataset.gender === userProfile.gender) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
 
         showScreen('dashboard');
         updateDashboardUI();
     } else {
-        if (savedApi) document.getElementById('inpApiUrl').value = savedApi;
         showScreen('onboarding');
     }
 }
