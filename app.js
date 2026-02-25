@@ -44,6 +44,52 @@ const btnCancelCrop = document.getElementById('btnCancelCrop');
 const btnConfirmCrop = document.getElementById('btnConfirmCrop');
 let cropperInstance = null;
 
+// --- API RATE LIMITING ---
+let isCooldown = false;
+
+function startCooldown() {
+    isCooldown = true;
+    let timeLeft = 15;
+
+    // Spremi originalne izglede tipki
+    const origTextBtnHtml = btnSendText.innerHTML;
+    const origCropBtnHtml = btnConfirmCrop.innerHTML;
+
+    // Zaključaj tipke
+    btnSendText.disabled = true;
+    btnConfirmCrop.disabled = true;
+    inpTextMeal.disabled = true;
+    inpCamera.disabled = true;
+    fabCamera.style.opacity = '0.5';
+    fabCamera.style.pointerEvents = 'none';
+
+    // Prvi render tick
+    btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold;">${timeLeft}s</span>`;
+    btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE ${timeLeft}s`;
+
+    const timer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            isCooldown = false;
+
+            // Otključaj tipke
+            btnSendText.disabled = false;
+            btnConfirmCrop.disabled = false;
+            inpTextMeal.disabled = false;
+            inpCamera.disabled = false;
+            fabCamera.style.opacity = '1';
+            fabCamera.style.pointerEvents = 'auto';
+
+            btnSendText.innerHTML = origTextBtnHtml;
+            btnConfirmCrop.innerHTML = origCropBtnHtml;
+        } else {
+            btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold;">${timeLeft}s</span>`;
+            btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE ${timeLeft}s`;
+        }
+    }, 1000);
+}
+
 // PWA Install Prompt
 let deferredPrompt;
 const installModal = document.getElementById('installModal');
@@ -162,6 +208,7 @@ function bindEvents() {
 
     // Text & Voice Input
     btnSendText.addEventListener('click', () => {
+        if (isCooldown) return;
         const text = inpTextMeal.value.trim();
         if (text) {
             handleTextUpload(text);
@@ -170,6 +217,7 @@ function bindEvents() {
 
     inpTextMeal.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
+            if (isCooldown) return;
             const text = inpTextMeal.value.trim();
             if (text) {
                 handleTextUpload(text);
@@ -319,6 +367,7 @@ btnCancelCrop.addEventListener('click', () => {
 // Potvrda Croppera i Slanje na AI
 btnConfirmCrop.addEventListener('click', async () => {
     if (!cropperInstance) return;
+    if (isCooldown) return;
 
     // Uzmi izrezani dio
     const canvas = cropperInstance.getCroppedCanvas({
@@ -336,6 +385,9 @@ btnConfirmCrop.addEventListener('click', async () => {
     // Skeleton loading UI
     mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-spinner fa-spin"></i><p>Šaljem izrezanu sliku na AI analizu...</p></div>`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Prekidač za hlađenje prije slanja na API
+    startCooldown();
 
     try {
         const response = await fetch(API_URL, {
@@ -384,6 +436,9 @@ async function handleTextUpload(text) {
 
     // Scrolaj na vrh
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Prekidač za hlađenje
+    startCooldown();
 
     try {
         const response = await fetch(API_URL, {
