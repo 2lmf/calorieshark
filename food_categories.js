@@ -514,7 +514,75 @@ const extendedFoodDB = [
         macrosPer100g: { carbs: 32, protein: 32, fat: 12 },
         standardUnits: { "plocica": 55, "komad": 55, "kom": 55 },
         note: "Prosječna proteinska pločica teži od 50 do 60 grama."
-    }
+    },
+    // === DESERTI I KOLAČI ===
+    {
+        name: "Štrudla od jabuke (Pita)",
+        keywords: ["strudla od jabuke", "pita od jabuke", "savijaca s jabukama", "pita jabuka"],
+        kcalPer100g: 220,
+        macrosPer100g: { carbs: 32, protein: 3, fat: 9 },
+        standardUnits: { "komad": 120, "snita": 120, "porcija": 150 },
+        note: "Manji pekarski komad ≈ 120g. Domaća debela šnita ≈ 150g."
+    },
+    {
+        name: "Štrudla od sira (Pita, Savijača)",
+        keywords: ["strudla od sira", "pita od sira", "savijaca sa sirom", "pita sir", "burek sir slatki"],
+        kcalPer100g: 270,
+        macrosPer100g: { carbs: 25, protein: 8, fat: 15 },
+        standardUnits: { "komad": 120, "snita": 120, "porcija": 150 },
+        note: "Malo više masti i proteina u odnosu na jabuku."
+    },
+    {
+        name: "Mađarica",
+        keywords: ["madarica", "kolac madarica", "kocka madarice"],
+        kcalPer100g: 410,
+        macrosPer100g: { carbs: 55, protein: 5, fat: 18 },
+        standardUnits: { "komad": 60, "kocka": 60, "snita": 60 },
+        note: "Koncentriran i kaloričan kolač. 1 klasična kocka ≈ 60g."
+    },
+    {
+        name: "Cheesecake (Torta od sira)",
+        keywords: ["cheesecake", "torta od sira", "cizkejk", "ciz kejk", "torta sir"],
+        kcalPer100g: 322,
+        macrosPer100g: { carbs: 25, protein: 6, fat: 22 },
+        standardUnits: { "komad": 150, "snita": 150, "porcija": 150 },
+        note: "1 srednja šnita u kafiću ili restoranu ≈ 150g."
+    },
+    {
+        name: "Palačinke (s nutellom / čokoladom)",
+        keywords: ["palacinke", "palacinka", "palacinke nutella", "palacinka s cokoladom"],
+        kcalPer100g: 300,
+        macrosPer100g: { carbs: 40, protein: 6, fat: 12 },
+        standardUnits: { "komad": 100, "kom": 100, "porcija": 200 },
+        note: "1 namazana pečena palačinka namazana nutellom teži oko 100g (cca 300 kcal po komadu)."
+    },
+
+    // === GRICKALICE I ORAŠASTI PLODOVI ===
+    {
+        name: "Čips (Slani, Paprika)",
+        keywords: ["cips", "cipsa", "chips", "frank", "lays"],
+        kcalPer100g: 536,
+        macrosPer100g: { carbs: 53, protein: 6, fat: 35 },
+        standardUnits: { "vreca": 150, "vrecica": 50, "saka": 30, "zdjelica": 75 },
+        note: "Vrlo kalorično. Manja vrećica = 50g, veća = 150g. Šaka = cca 30g."
+    },
+    {
+        name: "Kikiriki (Prženi, Slani)",
+        keywords: ["kikiriki", "kikirikija", "kikiriki slani"],
+        kcalPer100g: 600,
+        macrosPer100g: { carbs: 16, protein: 25, fat: 50 },
+        standardUnits: { "saka": 30, "vrecica": 100, "zdjelica": 100 },
+        note: "Bombe kalorija i masnoće, ali s puno proteina. 1 šaka ≈ 30g."
+    },
+    {
+        name: "Smoki (Flips sa kikirikijem)",
+        keywords: ["smoki", "flips", "kikiriki flips", "stark smoki", "bobi"],
+        kcalPer100g: 530,
+        macrosPer100g: { carbs: 52, protein: 12, fat: 30 },
+        standardUnits: { "vreca": 150, "mali smoki": 50, "saka": 20 },
+        note: "Cca 50g je malo pakiranje."
+    },
+
 ];
 
 // Ovdje integriram proširenu listu u već postojeći foodDB iz prve iteracije.
