@@ -53,6 +53,7 @@ body {
 }
 
 .brand-text {
+    font-family: 'Orbitron', 'Montserrat', sans-serif;
     font-size: 1.2rem;
     font-weight: 900;
     letter-spacing: 1px;
@@ -62,8 +63,8 @@ body {
 }
 
 .brand-text .calorie {
-    color: #000000;
-    /* Crna slova po želji korisnika */
+    color: var(--accent-cyan);
+    /* Plava po novoj želji korisnika */
 }
 
 .brand-text .shark {
