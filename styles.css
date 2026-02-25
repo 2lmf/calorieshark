@@ -410,3 +410,38 @@ body {
         opacity: 1;
     }
 }
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.85);
+    /* Dark semi-transparent overlay */
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    width: 90%;
+    max-width: 400px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--accent-cyan);
+    box-sizing: border-box;
+}
+
+.modal-content input,
+.modal-content select {
+    box-sizing: border-box;
+}

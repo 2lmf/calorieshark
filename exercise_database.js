@@ -96,6 +96,21 @@ const exerciseDB = [
         description: "Igranje tenisa 1 na 1 uz stalna kretanja."
     },
     {
+        name: "Padel",
+        met: 6.0,
+        description: "Dinamičan sport sličan tenisu koji se igra u parovima na manjem terenu."
+    },
+    {
+        name: "Badminton (Rekreativno)",
+        met: 5.5,
+        description: "Igranje badmintona na terminu ili vani na travi."
+    },
+    {
+        name: "Veslanje (Ergometar, Umjereno)",
+        met: 7.0,
+        description: "Veslanje na spravi (ergometru) umjerenim tempom (oko 100-150 W)."
+    },
+    {
         name: "Plivanje (Slobodni stil, lagano)",
         met: 5.8,
         description: "Lagano plivanje kraul ili prsno tehnikom bez utrkivanja."
