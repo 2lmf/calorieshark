@@ -332,7 +332,8 @@ if (btnCancelInstall && btnConfirmInstall) {
 
 function updateDashboardUI() {
     const burned = dailyData.totalBurned || 0;
-    const target = userProfile.tdee + burned;
+    const target = userProfile.tdee; // NO INCREASING TARGET TDEE
+
     document.getElementById('lblKcalTarget').textContent = target;
 
     // Exercise UI
@@ -348,25 +349,27 @@ function updateDashboardUI() {
     // Update graphic ring
     const radius = 45;
     const circumference = 2 * Math.PI * radius; // ~283
-    const percent = Math.min(dailyData.totalKcal / target, 1);
-    const offset = circumference - (percent * circumference);
+    const percentEaten = Math.min(dailyData.totalKcal / target, 1);
+    const offset = circumference - (percentEaten * circumference);
 
     const progressCircle = document.getElementById('kcalProgress');
     progressCircle.style.strokeDashoffset = offset;
 
     const burnedTrack = document.getElementById('kcalBurnedTrack');
     if (burned > 0) {
-        const pctTDEE = Math.min(userProfile.tdee / target, 1);
-        const pctBurned = burned / target;
+        const pctBurned = Math.min(burned / target, 1); // Ne pokazuj preko 100% tdee prstena u zelenoj
         burnedTrack.style.strokeDasharray = `${pctBurned * circumference} ${circumference}`;
-        burnedTrack.style.strokeDashoffset = `-${pctTDEE * circumference}`;
+        // Nacrtaj ga suprotno (od 100% oznake odnosno od tjemena prema lijevo)
+        burnedTrack.style.strokeDashoffset = `0`;
+        burnedTrack.style.transform = `scaleX(-1) rotate(-90deg)`; // Zrcalno crtanje zelenog prstena za potrosnju!
+        burnedTrack.style.transformOrigin = `center`;
     } else {
         burnedTrack.style.strokeDasharray = `0 ${circumference}`;
         burnedTrack.style.strokeDashoffset = `0`;
     }
 
     // Color logic
-    if (percent > 1.0) progressCircle.style.stroke = '#FF2A2A'; // Red if over
+    if (percentEaten > 1.0) progressCircle.style.stroke = '#FF2A2A'; // Red if over
     else progressCircle.style.stroke = 'var(--accent-cyan)';
 
     // Ažuriranje brojčanih iznosa makrosa na UI (tako da kod ponovnog ulaska nema nula)
@@ -625,9 +628,6 @@ function renderAIResult(aiJson) {
 }
 
 function drawPendingMealUI() {
-    let html = `<div class="pending-meal">
-                    <h3 style="color:var(--accent-cyan); margin-bottom:15px;"><i class="fas fa-robot"></i> AI ANALIZA OBROKA</h3>`;
-
     let totalKcal = 0;
 
     currentUnsavedMeal.items.forEach((item, index) => {
@@ -650,16 +650,24 @@ function drawPendingMealUI() {
         </div>`;
     });
 
-    html += `
+    const isExercise = totalKcal < 0;
+    const headerTitle = isExercise ? "ZABILJEŽI TRENING" : "AI ANALIZA OBROKA";
+    const headerIcon = isExercise ? "fa-running" : "fa-robot";
+    const confirmBtnTxt = isExercise ? "SPREMI TRENING" : "SPREMI U DNEVNIK";
+
+    // Ubacujemo dinamični naslov na dno nakon zbrajanja
+    let finalHtml = `<div class="pending-meal">
+        <h3 style="color:${isExercise ? '#00D084' : 'var(--accent-cyan)'}; margin-bottom:15px;"><i class="fas ${headerIcon}"></i> ${headerTitle}</h3>
+        ${html}
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 20px 0; padding-top:15px; border-top: 1px solid var(--border-color);">
             <strong style="font-size:1.2rem;">UKUPNO:</strong>
-            <strong style="font-size:1.5rem; color:var(--accent-orange);">${totalKcal} kcal</strong>
+            <strong style="font-size:1.5rem; color:${isExercise ? '#00D084' : 'var(--accent-orange)'};">${Math.abs(totalKcal)} kcal</strong>
         </div>
-        <button id="btnConfirmMeal" class="primary-btn"><i class="fas fa-check"></i> SPREMI U DNEVNIK</button>
+        <button id="btnConfirmMeal" class="primary-btn" style="background:${isExercise ? '#00D084' : 'var(--accent-orange)'};"><i class="fas fa-check"></i> ${confirmBtnTxt}</button>
         <button id="btnCancelMeal" class="icon-btn" style="width:100%; margin-top:10px; color:var(--text-muted); font-size:1rem;"><i class="fas fa-times"></i> Odbaci</button>
     </div>`;
 
-    mealsList.innerHTML = html;
+    mealsList.innerHTML = finalHtml;
 
     // Attach Listeners za mjenjanje gramaže
     document.querySelectorAll('.gram-input').forEach(input => {

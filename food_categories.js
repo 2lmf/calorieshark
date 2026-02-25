@@ -438,6 +438,24 @@ const extendedFoodDB = [
         macrosPer100g: { carbs: 53, protein: 6, fat: 35 },
         standardUnits: { "vrecica": 150, "mala vrecica": 50, "saka": 30 },
         note: "Izrazito puno masti. Velika vrećica čipsa je obično 150g."
+    },
+
+    // === SUPLEMENTI ===
+    {
+        name: "Whey Protein (Mjerica sa vodom)",
+        keywords: ["whey", "proteini", "whey protein", "mjerice proteina", "mjerica wheya"],
+        kcalPer100g: 380, // Oko 380 kcal na 100g praha
+        macrosPer100g: { carbs: 6, protein: 78, fat: 5 },
+        standardUnits: { "mjerica": 30, "merica": 30, "porcija": 30 },
+        note: "Jedna mjerica (scoop) praha je obično 30g. Ako piješ s mlijekom, dodaj mlijeko odvojeno."
+    },
+    {
+        name: "Proteinska pločica (Protein Bar)",
+        keywords: ["protein bar", "proteinska plocica", "proteinska cokoladica"],
+        kcalPer100g: 360,
+        macrosPer100g: { carbs: 32, protein: 32, fat: 12 },
+        standardUnits: { "plocica": 55, "komad": 55, "kom": 55 },
+        note: "Prosječna proteinska pločica teži od 50 do 60 grama."
     }
 ];
 
