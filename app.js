@@ -359,13 +359,12 @@ function updateDashboardUI() {
     if (burned > 0) {
         const pctBurned = Math.min(burned / target, 1); // Ne pokazuj preko 100% tdee prstena u zelenoj
         burnedTrack.style.strokeDasharray = `${pctBurned * circumference} ${circumference}`;
-        // Nacrtaj ga suprotno (od 100% oznake odnosno od tjemena prema lijevo)
         burnedTrack.style.strokeDashoffset = `0`;
-        burnedTrack.style.transform = `scaleX(-1) rotate(-90deg)`; // Zrcalno crtanje zelenog prstena za potrosnju!
-        burnedTrack.style.transformOrigin = `center`;
+        burnedTrack.style.transform = `none`;
     } else {
         burnedTrack.style.strokeDasharray = `0 ${circumference}`;
         burnedTrack.style.strokeDashoffset = `0`;
+        burnedTrack.style.transform = `none`;
     }
 
     // Color logic
@@ -740,7 +739,10 @@ async function saveMealToServer() {
 
             applyMealToDashboard(currentUnsavedMeal.items, totals, result.insertedId);
             currentUnsavedMeal = null;
-            mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-check-circle"></i><p>Obrok uspješno spremljen!</p></div>`;
+            const isExercise = totals.kcal < 0;
+            const msg = isExercise ? "Trening uspješno spremljen!" : "Obrok uspješno spremljen!";
+            const color = isExercise ? "#00D084" : "var(--accent-cyan)";
+            mealsList.innerHTML = `<div class="empty-state" style="color:${color};"><i class="fas fa-check-circle"></i><p>${msg}</p></div>`;
             setTimeout(() => {
                 renderDailyMeals();
             }, 1500);
