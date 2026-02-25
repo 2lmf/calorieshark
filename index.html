@@ -97,6 +97,71 @@
         </div>
     </div>
 
+    <!-- SETTINGS SCREEN (Profile Edit & About) -->
+    <div id="screenSettings" class="screen hidden" style="padding-top: 80px;">
+        <div class="onboarding-card">
+            <h2 style="color: var(--accent-cyan);"><i class="fas fa-cog"></i> POSTAVKE PROFILA</h2>
+
+            <div class="input-group">
+                <label>Korisničko ime (Username)</label>
+                <input type="text" id="inpSettingsUsername" placeholder="Npr. IvanMaster123" required
+                    autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label>Spol</label>
+                <div class="toggle-group" id="settingsToggleGroup">
+                    <button class="toggle-btn active" data-gender="male">MUŠKO</button>
+                    <button class="toggle-btn" data-gender="female">ŽENSKO</button>
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Godine</label>
+                    <input type="number" id="inpSettingsAge" value="30" min="10" max="100">
+                </div>
+                <div class="input-group">
+                    <label>Visina (cm)</label>
+                    <input type="number" id="inpSettingsHeight" value="180" min="100" max="250">
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Trenutna težina (kg)</label>
+                <input type="number" id="inpSettingsWeight" value="85" min="30" max="200" step="0.1">
+            </div>
+
+            <button id="btnSaveSettings" class="primary-btn mt-20" style="margin-bottom: 30px;"><i
+                    class="fas fa-save"></i> SPREMI PROMJENE</button>
+
+            <!-- ABOUT APP SECTION -->
+            <div
+                style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px;">
+                <img src="assets/SharpShark_Logo.png" alt="SharpShark" style="width: 80px; margin-bottom: 10px;">
+                <h3 style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 10px;">O Aplikaciji</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 15px;">
+                    <strong>CalorieShark</strong> je 100% besplatan alat (bez reklama!) razvijen od strane agencije
+                    <span style="color: var(--accent-cyan); font-weight: bold;">SharpShark</span> (digitalni odjel
+                    grupacije
+                    <span
+                        style="color: var(--accent-orange); font-family: 'Orbitron', sans-serif; font-weight: bold;">2LMF
+                        PRO</span>).
+                </p>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px;">
+                    Sviđa vam se moderan dizajn, AI integracija i brzina? Projektiramo robusne web aplikacije,
+                    progresivne aplikacije i portale za poduzeća.
+                </p>
+                <a href="https://2lmf-pro.hr/digitalna_dominacija.html" target="_blank"
+                    style="display: inline-block; background: var(--bg-dark); color: var(--accent-cyan); text-decoration: none; padding: 12px 20px; border-radius: 30px; font-weight: bold; font-size: 0.9rem; border: 1px solid var(--accent-cyan); transition: all 0.3s;">
+                    Zatraži neobvezujuću ponudu <i class="fas fa-external-link-alt"
+                        style="margin-left: 5px; font-size: 0.8rem;"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
     <!-- MAIN DASHBOARD SCREEN -->
     <div id="screenDashboard" class="screen hidden">
         <div class="dashboard-header">

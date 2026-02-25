@@ -224,7 +224,50 @@ function bindEvents() {
 
     // Settings Button
     document.getElementById('btnSettings').addEventListener('click', () => {
-        showScreen('onboarding');
+        // Pre-fill with current profile
+        document.getElementById('inpSettingsUsername').value = userProfile.username;
+        document.getElementById('inpSettingsAge').value = userProfile.age;
+        document.getElementById('inpSettingsHeight').value = userProfile.height;
+        document.getElementById('inpSettingsWeight').value = userProfile.weight;
+
+        const toggleBtns = document.querySelectorAll('#settingsToggleGroup .toggle-btn');
+        toggleBtns.forEach(btn => {
+            if (btn.dataset.gender === userProfile.gender) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        showScreen('settings');
+    });
+
+    // Handle Setting Gender Toggles
+    const settingsToggleBtns = document.querySelectorAll('#settingsToggleGroup .toggle-btn');
+    settingsToggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            settingsToggleBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // Save Settings Button
+    document.getElementById('btnSaveSettings').addEventListener('click', () => {
+        const un = document.getElementById('inpSettingsUsername').value.trim();
+        const a = parseInt(document.getElementById('inpSettingsAge').value);
+        const h = parseInt(document.getElementById('inpSettingsHeight').value);
+        const w = parseFloat(document.getElementById('inpSettingsWeight').value);
+        const activeBtn = document.querySelector('#settingsToggleGroup .toggle-btn.active');
+        const g = activeBtn ? activeBtn.dataset.gender : 'male';
+
+        if (!un) { alert('Unesi korisničko ime!'); return; }
+
+        userProfile = { username: un, age: a, height: h, weight: w, gender: g };
+        calculateTDEE();
+        localStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
+
+        showScreen('dashboard');
+        updateDashboardUI();
     });
 
     // Stats Button
