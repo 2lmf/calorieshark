@@ -1,10 +1,12 @@
-const CACHE_NAME = 'calorieshark-v8';
+const CACHE_NAME = 'calorieshark-v9';
 const ASSETS = [
     './',
     './index.html',
     './styles.css',
     './app.js',
     './food_database.js',
+    './food_categories.js',
+    './food_categories_2.js',
     './assets/logo_shark_digital_transparent.png',
     './assets/SharpShark_Logo_GreyOrange_Large.png'
 ];
