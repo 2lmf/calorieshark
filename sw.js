@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calorieshark-v23';
+const CACHE_NAME = 'calorieshark-v24';
 const ASSETS = [
     './',
     './index.html',
@@ -9,7 +9,7 @@ const ASSETS = [
     './food_categories_2.js',
     './exercise_database.js',
     './assets/logo_shark_digital_transparent.png',
-    './assets/SharpShark_Logo_GreyOrange_Large.png'
+    './assets/SharpShark_Logo.png'
 ];
 
 self.addEventListener('install', (event) => {
