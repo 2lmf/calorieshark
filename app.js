@@ -628,6 +628,7 @@ function renderAIResult(aiJson) {
 }
 
 function drawPendingMealUI() {
+    let html = '';
     let totalKcal = 0;
 
     currentUnsavedMeal.items.forEach((item, index) => {
