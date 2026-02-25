@@ -146,6 +146,64 @@ const extendedFoodDB = [
         note: "Lagana, proteinska verzija azijskih rezanaca."
     },
 
+    // === JAPANSKA & AZIJSKA KUHINJA ===
+    {
+        name: "Sushi (Maki roll, losos)",
+        keywords: ["sushi", "maki", "maki roll", "sushi losos", "sushi rolica", "sushi sa lososom"],
+        kcalPer100g: 140,
+        macrosPer100g: { carbs: 28, protein: 5, fat: 1 },
+        standardUnits: { "komad": 25, "porcija": 150 },
+        note: "Odnosi se na klasičnu Maki rolicu s lososom. Komad (1 kolutić) ≈ 25g."
+    },
+    {
+        name: "Sushi (Nigiri, losos)",
+        keywords: ["nigiri", "sushi nigiri", "nigiri losos", "sushi komad"],
+        kcalPer100g: 155,
+        macrosPer100g: { carbs: 20, protein: 8, fat: 4 },
+        standardUnits: { "komad": 30, "porcija": 180 },
+        note: "Riža s komadom sirove ribe na vrhu. 1 komad ≈ 30g."
+    },
+    {
+        name: "Gyoza (punjena svinjetinom, pržena)",
+        keywords: ["gyoza", "gioza", "japanski valjusci", "dumplings", "pržena gyoza", "gyoze"],
+        kcalPer100g: 220,
+        macrosPer100g: { carbs: 24, protein: 8, fat: 10 },
+        standardUnits: { "komad": 25, "porcija": 125 },
+        note: "Jedan komad japanskog dumplinga ≈ 25g. Porcija 5 komada ≈ 125g."
+    },
+    {
+        name: "Ramen (mesna juha s rezancima i jajem)",
+        keywords: ["ramen", "japanska juha", "juha s rezancima", "tonkotsu", "miso ramen"],
+        kcalPer100g: 95,
+        macrosPer100g: { carbs: 10, protein: 4, fat: 4 },
+        standardUnits: { "tanjur": 500, "zdjela": 500 },
+        note: "Odnosi se na čitavo jelo (tekućina + rezanci + meso + jaje). Velika zdjela ≈ 500-600g."
+    },
+    {
+        name: "Wok s piletinom i povrćem",
+        keywords: ["wok", "vok", "wok piletina", "kineski rezanci", "azijski wok", "vok piletina"],
+        kcalPer100g: 135,
+        macrosPer100g: { carbs: 16, protein: 8, fat: 4 },
+        standardUnits: { "porcija": 350, "tanjur": 350 },
+        note: "Standardna azijska wok mješavina s rezancima. Porcija ≈ 350-400g."
+    },
+    {
+        name: "Spring rolice (pržene)",
+        keywords: ["spring rolice", "proljetne rolice", "kineske rolice", "spring rolls"],
+        kcalPer100g: 250,
+        macrosPer100g: { carbs: 32, protein: 4, fat: 11 },
+        standardUnits: { "komad": 40, "mala porcija": 120 },
+        note: "Klasična pržena kineska proljetna rolica. 1 komad ≈ 40g."
+    },
+    {
+        name: "Edamame (Kuhana soja)",
+        keywords: ["edamame", "soja", "japanska soja"],
+        kcalPer100g: 121,
+        macrosPer100g: { carbs: 9, protein: 11, fat: 5 },
+        standardUnits: { "porcija": 100, "šalica": 150 },
+        note: "Popularno japansko predjelo, izvrstan izvor proteina."
+    },
+
     // === JUHE ===
     {
         name: "Goveđa juha (bistra)",
