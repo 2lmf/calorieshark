@@ -445,7 +445,41 @@ async function handleTextUpload(text) {
     }
 
     inpTextMeal.value = "";
-    mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-spinner fa-spin"></i><p>Analiziram tekst obroka s AI...</p></div>`;
+
+    // --- OFFLINE AI PROVJERA ---
+    // Ako postoji funkcija iz food_database.js, prvo dajemo njoj šansu!
+    if (typeof searchLocalFoodDB === 'function') {
+        const localHit = searchLocalFoodDB(text);
+
+        if (localHit) {
+            mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-orange);"><i class="fas fa-bolt"></i><p>Offline AI analizira: ${localHit.name}...</p></div>`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Generiramo lažni Firebase Timeout da korisniku bude glatko
+            setTimeout(() => {
+                const fakeAPIResponse = {
+                    items: [
+                        {
+                            name: localHit.name,
+                            estimatedWeightG: localHit.estimatedWeightG,
+                            kcalPer100g: localHit.kcalPer100g,
+                            macrosPer100g: localHit.macrosPer100g
+                        }
+                    ]
+                };
+
+                // Alert korisnika kroz UI da zna za napomenu
+                alert(localHit.note);
+
+                renderAIResult(fakeAPIResponse);
+            }, 600); // 0.6 sekundi
+
+            return; // Prekini, NE ŠALJI na Google API! Tvoj novčanik je spašen.
+        }
+    }
+
+    // --- GOOGLE GEMINI AI (Ako lokalna baza ne zna što je to) ---
+    mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-spinner fa-spin"></i><p>Pitam Gemini AI za: ${text}...</p></div>`;
 
     // Scrolaj na vrh
     window.scrollTo({ top: 0, behavior: 'smooth' });
