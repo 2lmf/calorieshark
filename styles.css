@@ -359,8 +359,8 @@ body {
     display: flex;
     align-items: center;
     padding: 5px 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 18px rgba(230, 126, 34, 0.25);
+    border: 2px solid var(--accent-orange);
     z-index: 999;
 }
 
