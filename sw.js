@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calorieshark-v21';
+const CACHE_NAME = 'calorieshark-v23';
 const ASSETS = [
     './',
     './index.html',
