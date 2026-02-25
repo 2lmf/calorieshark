@@ -300,8 +300,8 @@ body {
 /* FAB */
 .fab {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    bottom: 95px;
+    right: 20px;
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -352,8 +352,8 @@ body {
     position: fixed;
     bottom: 30px;
     left: 20px;
-    right: 100px;
-    /* Ostavlja prostor za FAB kameru */
+    right: 20px;
+    /* Puni zaslon, jer je FAB kamera ispred */
     background: var(--bg-card);
     border-radius: 30px;
     display: flex;

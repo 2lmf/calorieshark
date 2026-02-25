@@ -55,17 +55,22 @@ function startCooldown() {
     const origTextBtnHtml = btnSendText.innerHTML;
     const origCropBtnHtml = btnConfirmCrop.innerHTML;
 
-    // Zaključaj tipke
+    // Zaključaj tipke i postavi sivilo/neklikanje
     btnSendText.disabled = true;
+    btnSendText.style.pointerEvents = 'none';
     btnConfirmCrop.disabled = true;
+    btnConfirmCrop.style.pointerEvents = 'none';
+    btnVoice.disabled = true;
+    btnVoice.style.opacity = '0.5';
+    btnVoice.style.pointerEvents = 'none';
     inpTextMeal.disabled = true;
     inpCamera.disabled = true;
     fabCamera.style.opacity = '0.5';
     fabCamera.style.pointerEvents = 'none';
 
-    // Prvi render tick
-    btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold;">${timeLeft}s</span>`;
-    btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE ${timeLeft}s`;
+    // Prvi render tick (Crveni ispis)
+    btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold; color:#FF2A2A;">${timeLeft}s</span>`;
+    btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE <span style="color:#FF2A2A;">${timeLeft}s</span>`;
 
     const timer = setInterval(() => {
         timeLeft--;
@@ -75,7 +80,12 @@ function startCooldown() {
 
             // Otključaj tipke
             btnSendText.disabled = false;
+            btnSendText.style.pointerEvents = 'auto';
             btnConfirmCrop.disabled = false;
+            btnConfirmCrop.style.pointerEvents = 'auto';
+            btnVoice.disabled = false;
+            btnVoice.style.opacity = '1';
+            btnVoice.style.pointerEvents = 'auto';
             inpTextMeal.disabled = false;
             inpCamera.disabled = false;
             fabCamera.style.opacity = '1';
@@ -84,8 +94,8 @@ function startCooldown() {
             btnSendText.innerHTML = origTextBtnHtml;
             btnConfirmCrop.innerHTML = origCropBtnHtml;
         } else {
-            btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold;">${timeLeft}s</span>`;
-            btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE ${timeLeft}s`;
+            btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold; color:#FF2A2A;">${timeLeft}s</span>`;
+            btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE <span style="color:#FF2A2A;">${timeLeft}s</span>`;
         }
     }, 1000);
 }
@@ -225,7 +235,10 @@ function bindEvents() {
         }
     });
 
-    btnVoice.addEventListener('click', handleVoiceInput);
+    btnVoice.addEventListener('click', (e) => {
+        if (isCooldown) return;
+        handleVoiceInput(e);
+    });
 }
 
 // --- CORE LOGIC ---
