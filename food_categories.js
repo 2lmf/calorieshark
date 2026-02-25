@@ -280,6 +280,64 @@ const extendedFoodDB = [
         note: "Dodano ulje povećava kalorije (1 žlica = +130 Kcal)."
     },
 
+    // === RIBA I MORSKI PLODOVI ===
+    {
+        name: "Bijela riba (Orada, Brancin - Žar / Lešo)",
+        keywords: ["bijela riba", "orada", "brancin", "riba sa zara", "kuhana riba", "leso riba"],
+        kcalPer100g: 110,
+        macrosPer100g: { carbs: 0, protein: 20, fat: 3 },
+        standardUnits: { "porcija": 300, "komad": 300 },
+        note: "Odnosi se na cijelu porciju ribe (meso + kosti). Čisto meso teži manje, ali ovo je prosjek s roštilja."
+    },
+    {
+        name: "Plava riba (Skuša, srdela - Žar)",
+        keywords: ["plava riba", "skusa", "srdela", "srdela zar", "srdele na gradele", "skusa sa zara"],
+        kcalPer100g: 205,
+        macrosPer100g: { carbs: 0, protein: 20, fat: 14 },
+        standardUnits: { "porcija": 250, "komad": 250, "srdele": 250 },
+        note: "Izvrsna plava riba puna zdravih masti (Omega 3). Pržene u ulju su puno kaloričnije!"
+    },
+    {
+        name: "Plava riba (Srdela, pržena u ulju)",
+        keywords: ["srdela przena", "przene srdele", "fritirane srdele", "frigane srdele"],
+        kcalPer100g: 300,
+        macrosPer100g: { carbs: 8, protein: 18, fat: 22 },
+        standardUnits: { "porcija": 250, "srdele": 250 },
+        note: "Prženje brašnom i uljem značajno diže kalorije u odnosu na roštilj."
+    },
+    {
+        name: "Lignje (Žar)",
+        keywords: ["lignje", "lignje na zaru", "lignje zar", "porcija liganja"],
+        kcalPer100g: 90,
+        macrosPer100g: { carbs: 3, protein: 16, fat: 1.5 },
+        standardUnits: { "porcija": 250, "tanjur": 250 },
+        note: "Niskokaloričan obrok krcat proteinima."
+    },
+    {
+        name: "Lignje (Pržene)",
+        keywords: ["przene lignje", "lignje przene", "frigane lignje"],
+        kcalPer100g: 220,
+        macrosPer100g: { carbs: 15, protein: 15, fat: 11 },
+        standardUnits: { "porcija": 250, "tanjur": 250 },
+        note: "Paniranje i ulje utrostruče kalorije standardne porcije liganja."
+    },
+    {
+        name: "Dagnje / Školjke (Buzara)",
+        keywords: ["dagnje", "skoljke", "skoljke buzara", "musule", "buzara od skoljki", "buzara"],
+        kcalPer100g: 80,
+        macrosPer100g: { carbs: 4, protein: 12, fat: 2 },
+        standardUnits: { "porcija": 500, "tanjur": 500, "kila": 1000 },
+        note: "Tanjur od 500g su većinom ljušture! Samo jelo ima jako malo kalorija ako ne jedeš kruh s točem."
+    },
+    {
+        name: "Kozice / Škampi (Žar ili Buzara)",
+        keywords: ["kozice", "skampi", "skampi buzara", "kozice sa zara", "gamberi"],
+        kcalPer100g: 105,
+        macrosPer100g: { carbs: 1, protein: 20, fat: 2 },
+        standardUnits: { "porcija": 300, "tanjur": 300 },
+        note: "Vrhunski, vrlo čisti protein bez puno masnoće."
+    },
+
     // === DODATNO VOĆE ===
     {
         name: "Naranča",
