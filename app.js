@@ -64,8 +64,8 @@ function startCooldown() {
     isCooldown = true;
     let timeLeft = 15;
 
-    // Spremi originalne izglede tipki
-    const origTextBtnHtml = btnSendText.innerHTML;
+    // Spremi originalne izglede
+    const origPlaceholder = inpTextMeal.placeholder;
     const origCropBtnHtml = btnConfirmCrop.innerHTML;
 
     // Zaključaj tipke i postavi sivilo/neklikanje
@@ -81,8 +81,8 @@ function startCooldown() {
     fabCamera.style.opacity = '0.5';
     fabCamera.style.pointerEvents = 'none';
 
-    // Prvi render tick (Crveni ispis)
-    btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold; color:#FF2A2A;">${timeLeft}s</span>`;
+    // Prvi render tick
+    inpTextMeal.placeholder = `Hlađenje sustava: ${timeLeft}s...`;
     btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE <span style="color:#FF2A2A;">${timeLeft}s</span>`;
 
     const timer = setInterval(() => {
@@ -104,10 +104,10 @@ function startCooldown() {
             fabCamera.style.opacity = '1';
             fabCamera.style.pointerEvents = 'auto';
 
-            btnSendText.innerHTML = origTextBtnHtml;
+            inpTextMeal.placeholder = origPlaceholder;
             btnConfirmCrop.innerHTML = origCropBtnHtml;
         } else {
-            btnSendText.innerHTML = `<span style="font-size:0.7rem; font-weight:bold; color:#FF2A2A;">${timeLeft}s</span>`;
+            inpTextMeal.placeholder = `Hlađenje sustava: ${timeLeft}s...`;
             btnConfirmCrop.innerHTML = `<i class="fas fa-snowflake"></i> HLAĐENJE <span style="color:#FF2A2A;">${timeLeft}s</span>`;
         }
     }, 1000);
@@ -486,28 +486,21 @@ async function handleTextUpload(text) {
         const localHit = searchLocalFoodDB(text);
 
         if (localHit) {
-            mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-orange);"><i class="fas fa-bolt"></i><p>Offline AI analizira: ${localHit.name}...</p></div>`;
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Generiramo lažni Firebase Timeout da korisniku bude glatko
-            setTimeout(() => {
-                const fakeAPIResponse = {
-                    items: [
-                        {
-                            name: localHit.name,
-                            estimatedWeightG: localHit.estimatedWeightG,
-                            kcalPer100g: localHit.kcalPer100g,
-                            macrosPer100g: localHit.macrosPer100g
-                        }
-                    ]
-                };
+            const fakeAPIResponse = {
+                items: [
+                    {
+                        name: localHit.name,
+                        estimatedWeightG: localHit.estimatedWeightG,
+                        kcalPer100g: localHit.kcalPer100g,
+                        macrosPer100g: localHit.macrosPer100g
+                    }
+                ]
+            };
 
-                // Alert korisnika kroz UI da zna za napomenu
-                alert(localHit.note);
-
-                renderAIResult(fakeAPIResponse);
-            }, 600); // 0.6 sekundi
-
+            // Trenutno prebacivanje u UI (bez ikakvih napomena i čekanja)
+            renderAIResult(fakeAPIResponse);
             return; // Prekini, NE ŠALJI na Google API! Tvoj novčanik je spašen.
         }
     }

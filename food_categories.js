@@ -88,6 +88,22 @@ const extendedFoodDB = [
         standardUnits: { "komad": 150, "hot dog": 150 },
         note: "Standardni ulični hot dog s 1 hrenovkom i pecivom."
     },
+    {
+        name: "Kebab (s piletinom)",
+        keywords: ["kebab", "pileci kebab", "kebab u lepinji", "doner kebab"],
+        kcalPer100g: 215,
+        macrosPer100g: { carbs: 22, protein: 12, fat: 9 },
+        standardUnits: { "porcija": 350, "veliki": 450, "mali": 250, "kebab": 350 },
+        note: "Prosječan kebab u tortilji ili lepinji teži oko 350g."
+    },
+    {
+        name: "Sir i vrhnje",
+        keywords: ["sir i vrhnje", "svjezi sir", "posni sir s vrhnjem"],
+        kcalPer100g: 110,
+        macrosPer100g: { carbs: 4, protein: 12, fat: 5 },
+        standardUnits: { "porcija": 200, "tanjur": 200, "zdjelica": 200 },
+        note: "Izmiješani svježi kravlji sir s malo vrhnja. Za punomasno vrhnje dodaj kalorije."
+    },
 
     // === JUHE ===
     {
