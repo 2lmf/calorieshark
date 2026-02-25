@@ -817,7 +817,9 @@ function renderDailyMeals() {
     document.querySelectorAll('.btn-delete-meal').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.currentTarget.getAttribute('data-index'));
-            if (confirm("Jeste li sigurni da želite obrisati ovaj obrok?")) {
+            const isExercise = dailyData.meals[index].totals.kcal < 0;
+            const message = isExercise ? "Jeste li sigurni da želite obrisati ovaj trening?" : "Jeste li sigurni da želite obrisati ovaj obrok?";
+            if (confirm(message)) {
                 deleteMeal(index);
             }
         });

@@ -105,6 +105,47 @@ const extendedFoodDB = [
         note: "Izmiješani svježi kravlji sir s malo vrhnja. Za punomasno vrhnje dodaj kalorije."
     },
 
+    {
+        name: "Noodles (Azijski rezanci, kuhani)",
+        keywords: ["noodles", "nudle", "azijski rezanci", "rižini rezanci"],
+        kcalPer100g: 138,
+        macrosPer100g: { carbs: 25, protein: 4, fat: 2 },
+        standardUnits: { "porcija": 200, "tanjur": 200 },
+        note: "Odnosi se na čiste kuhane noodlese bez puno umaka i mesa."
+    },
+    {
+        name: "Wok / Noodles s povrćem",
+        keywords: ["wok povrcem", "noodles s povrcem", "nudle povrce", "povrtni wok"],
+        kcalPer100g: 110,
+        macrosPer100g: { carbs: 16, protein: 3, fat: 4 },
+        standardUnits: { "porcija": 350, "tanjur": 350 },
+        note: "Manje kalorija na 100g od čistih rezanaca jer povrće razrjeđuje masu."
+    },
+    {
+        name: "Wok / Noodles s piletinom",
+        keywords: ["wok piletinom", "noodles s piletinom", "nudle piletina", "wok piletina"],
+        kcalPer100g: 140,
+        macrosPer100g: { carbs: 15, protein: 9, fat: 5 },
+        standardUnits: { "porcija": 400, "tanjur": 400 },
+        note: "Standardna restoranska wok porcija teži oko 400g."
+    },
+    {
+        name: "Wok / Noodles sa svinjetinom",
+        keywords: ["wok svinjetina", "noodles sa svinjetinom", "nudle svinjetina"],
+        kcalPer100g: 160,
+        macrosPer100g: { carbs: 15, protein: 10, fat: 7 },
+        standardUnits: { "porcija": 400, "tanjur": 400 },
+        note: "Svinjetina donosi vise masti nego pileci wok."
+    },
+    {
+        name: "Wok / Noodles s kozicama",
+        keywords: ["wok kozice", "noodles s kozicama", "nudle kozice", "pad thai kozice"],
+        kcalPer100g: 125,
+        macrosPer100g: { carbs: 16, protein: 8, fat: 3 },
+        standardUnits: { "porcija": 400, "tanjur": 400 },
+        note: "Lagana, proteinska verzija azijskih rezanaca."
+    },
+
     // === JUHE ===
     {
         name: "Goveđa juha (bistra)",
