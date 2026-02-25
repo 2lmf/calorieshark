@@ -26,7 +26,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzydHpTGEyigElRio20Il0g
 const screens = {
     onboarding: document.getElementById('screenOnboarding'),
     dashboard: document.getElementById('screenDashboard'),
-    stats: document.getElementById('screenStats')
+    stats: document.getElementById('screenStats'),
+    settings: document.getElementById('screenSettings')
 };
 
 const fabCamera = document.getElementById('fabCamera');
@@ -332,6 +333,8 @@ function showScreen(screenId) {
         // Dodajemo mali back button efekt na top-nav logo klikom (povratak na dashboard)
         document.querySelector('.brand-text').onclick = () => showScreen('dashboard');
         document.querySelector('.brand-text').style.cursor = 'pointer';
+    } else if (screenId === 'settings') {
+        screens.settings.classList.remove('hidden');
     }
 }
 
