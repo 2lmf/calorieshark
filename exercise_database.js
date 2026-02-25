@@ -1,4 +1,10 @@
 const exerciseDB = [
+    // === MANUALNI UNOS ===
+    {
+        name: "Pametni Sat (Ručni unos)",
+        met: 0,
+        description: "Očitaj i prepiši točan broj potrošenih kalorija sa svog Garmin, Apple ili Huawei zaslona."
+    },
     // === KARDIO I TRČANJE ===
     {
         name: "Hodanje (Lagano, 3 km/h)",

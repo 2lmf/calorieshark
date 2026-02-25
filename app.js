@@ -44,6 +44,8 @@ const exerciseSelect = document.getElementById('exerciseSelect');
 const exerciseDesc = document.getElementById('exerciseDesc');
 const inpExerciseDuration = document.getElementById('inpExerciseDuration');
 const lblExercisePreview = document.getElementById('lblExercisePreview');
+const lblExerciseInputTitle = document.getElementById('lblExerciseInputTitle');
+const exercisePillButtons = document.getElementById('exercisePillButtons');
 const btnCancelExercise = document.getElementById('btnCancelExercise');
 const btnConfirmExercise = document.getElementById('btnConfirmExercise');
 const btnsDuration = document.querySelectorAll('.btn-duration');
@@ -606,6 +608,7 @@ function convertFileToBase64(file) {
 }
 
 let currentUnsavedMeal = null;
+let editingMealIndex = null; // Zastavica za cuvanje id-a kod re-edita
 
 function renderAIResult(aiJson) {
     if (!aiJson || !aiJson.items || aiJson.items.length === 0) {
@@ -667,7 +670,9 @@ function drawPendingMealUI() {
     document.getElementById('btnConfirmMeal').addEventListener('click', saveMealToServer);
     document.getElementById('btnCancelMeal').addEventListener('click', () => {
         currentUnsavedMeal = null;
-        mealsList.innerHTML = `<div class="empty-state"><i class="fas fa-utensils"></i><p>Nema zabilježenih obroka danas.</p></div>`;
+        editingMealIndex = null;
+        renderDailyMeals(); // Osvjezi trenutnu listu i povrati stari obrok (ako editiramo)
+        updateDashboardUI();
     });
 }
 
@@ -713,6 +718,13 @@ async function saveMealToServer() {
         }
 
         if (result.status === 'success') {
+
+            // U slucaju da editiramo postojeci obrok, tek SADA nakon uspjeha Brisemo onaj sa starog indexa!
+            if (editingMealIndex !== null) {
+                deleteMeal(editingMealIndex, true); // (index, skipRender) -> istina
+                editingMealIndex = null;
+            }
+
             applyMealToDashboard(currentUnsavedMeal.items, totals, result.insertedId);
             currentUnsavedMeal = null;
             mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-check-circle"></i><p>Obrok uspješno spremljen!</p></div>`;
@@ -819,16 +831,13 @@ function editMeal(index) {
     // Spremi stari obrok u varijablu da imamo pocetne stavke za edit UI
     // Duboka kopija da ne mutiramo orginal dok se ne spremi
     currentUnsavedMeal = JSON.parse(JSON.stringify({ items: dailyData.meals[index].items }));
+    editingMealIndex = index; // Cuva lokaciju da ga overwriteamo ako dode confirm
 
-    // Odmah obrišemo originalni obrok, tako da kada završi u "Pending UI" ponovno zbrajanje ne dupla podatke
-    deleteMeal(index).then(() => {
-        // Skoči na vrh i nacrtaj pending UI sa tim starim stavkama
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        drawPendingMealUI();
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    drawPendingMealUI();
 }
 
-async function deleteMeal(index) {
+async function deleteMeal(index, skipRender = false) {
     const meal = dailyData.meals[index];
     const mealId = meal.id;
 
@@ -870,15 +879,17 @@ async function deleteMeal(index) {
     // Brisanje iz Array-a
     dailyData.meals.splice(index, 1);
 
-    // Update screen
-    document.getElementById('lblKcalEaten').textContent = Math.round(dailyData.totalKcal);
-    document.getElementById('lblCarbs').textContent = Math.round(dailyData.carbs) + "g";
-    document.getElementById('lblProtein').textContent = Math.round(dailyData.protein) + "g";
-    document.getElementById('lblFat').textContent = Math.round(dailyData.fat) + "g";
+    if (!skipRender) {
+        // Update screen
+        document.getElementById('lblKcalEaten').textContent = Math.round(dailyData.totalKcal);
+        document.getElementById('lblCarbs').textContent = Math.round(dailyData.carbs) + "g";
+        document.getElementById('lblProtein').textContent = Math.round(dailyData.protein) + "g";
+        document.getElementById('lblFat').textContent = Math.round(dailyData.fat) + "g";
 
-    saveDailyData();
-    renderDailyMeals();
-    updateDashboardUI();
+        saveDailyData();
+        renderDailyMeals();
+        updateDashboardUI();
+    }
 }
 
 // ==========================================
@@ -1054,9 +1065,20 @@ function updateExercisePreview() {
     const ex = exerciseDB[exerciseSelect.value];
     exerciseDesc.textContent = ex.description;
 
-    const min = parseInt(inpExerciseDuration.value) || 0;
-    // Formula: (MET * 3.5 * Kilaža / 200) * Minute
-    const burnedKcal = (ex.met * 3.5 * userProfile.weight / 200) * min; // Točno i znanstveno!
+    const val = parseInt(inpExerciseDuration.value) || 0;
+
+    let burnedKcal = 0;
+    if (ex.met === 0) {
+        // Pametni sat ručni unos!
+        burnedKcal = val;
+        lblExerciseInputTitle.textContent = "Potrošene kalorije (kcal):";
+        exercisePillButtons.style.display = 'none'; // Sakrij +15m +30m gumbe
+    } else {
+        // Normalan znanstveni izračun iz minuta i mase
+        burnedKcal = (ex.met * 3.5 * userProfile.weight / 200) * val;
+        lblExerciseInputTitle.textContent = "Trajanje (minute):";
+        exercisePillButtons.style.display = 'flex';
+    }
 
     lblExercisePreview.innerHTML = `🔥 -${Math.round(burnedKcal)} <span style="font-size:1rem;">kcal</span>`;
 }
@@ -1087,21 +1109,26 @@ function setupExerciseEvents() {
     btnConfirmExercise.addEventListener('click', () => {
         if (typeof exerciseDB === 'undefined') return;
         const ex = exerciseDB[exerciseSelect.value];
-        const min = parseInt(inpExerciseDuration.value) || 0;
+        const val = parseInt(inpExerciseDuration.value) || 0;
 
-        if (min <= 0) {
-            alert("Unesite ispravno trajanje.");
+        if (val <= 0) {
+            alert("Unesite ispravan broj.");
             return;
         }
 
-        const burnedKcal = Math.round((ex.met * 3.5 * userProfile.weight / 200) * min);
+        let burnedKcal = 0;
+        if (ex.met === 0) {
+            burnedKcal = val;
+        } else {
+            burnedKcal = Math.round((ex.met * 3.5 * userProfile.weight / 200) * val);
+        }
 
         // Formiramo "lažni" AI odgovor za Pending UI, ali s negativnim kalorijama i 0 makro
         const fakeAIResponse = {
             items: [
                 {
-                    name: `[VJEŽBA] ${ex.name} (${min} min)`,
-                    estimatedWeightG: min, // Hack da UI gramaže postane UI minute
+                    name: ex.met === 0 ? `[VJEŽBA] Garmin / Smartwatch` : `[VJEŽBA] ${ex.name} (${val} min)`,
+                    estimatedWeightG: val, // Hack da UI gramaže postane UI minute
                     kcalPer100g: -burnedKcal, // -burnedKcal za 1 minutu hack
                     macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
                 }
