@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calorieshark-v9';
+const CACHE_NAME = 'calorieshark-v10';
 const ASSETS = [
     './',
     './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
     './food_database.js',
     './food_categories.js',
     './food_categories_2.js',
+    './exercise_database.js',
     './assets/logo_shark_digital_transparent.png',
     './assets/SharpShark_Logo_GreyOrange_Large.png'
 ];

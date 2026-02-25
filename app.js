@@ -37,6 +37,17 @@ const inpTextMeal = document.getElementById('inpTextMeal');
 const btnSendText = document.getElementById('btnSendText');
 const btnVoice = document.getElementById('btnVoice');
 
+// Exercise Modul DOM
+const btnAddExercise = document.getElementById('btnAddExercise');
+const exerciseModal = document.getElementById('exerciseModal');
+const exerciseSelect = document.getElementById('exerciseSelect');
+const exerciseDesc = document.getElementById('exerciseDesc');
+const inpExerciseDuration = document.getElementById('inpExerciseDuration');
+const lblExercisePreview = document.getElementById('lblExercisePreview');
+const btnCancelExercise = document.getElementById('btnCancelExercise');
+const btnConfirmExercise = document.getElementById('btnConfirmExercise');
+const btnsDuration = document.querySelectorAll('.btn-duration');
+
 // Cropper DOM Elements
 const cropModal = document.getElementById('cropModal');
 const cropImage = document.getElementById('cropImage');
@@ -111,6 +122,7 @@ function init() {
     registerServiceWorker();
     loadDailyData();
     loadProfile();
+    initExerciseModal();
     bindEvents();
 }
 
@@ -122,10 +134,16 @@ function loadDailyData() {
         const parsed = JSON.parse(saved);
         if (parsed.date === today) {
             dailyData = parsed.data;
+            // Migracija unazad (ako netko već ima spremljeno bez totalBurned)
+            if (typeof dailyData.totalBurned === 'undefined') {
+                dailyData.totalBurned = 0;
+            }
         } else {
             // Novi dan, resetiraj
-            dailyData = { totalKcal: 0, carbs: 0, protein: 0, fat: 0, meals: [] };
+            dailyData = { totalKcal: 0, carbs: 0, protein: 0, fat: 0, totalBurned: 0, meals: [] };
         }
+    } else {
+        dailyData = { totalKcal: 0, carbs: 0, protein: 0, fat: 0, totalBurned: 0, meals: [] };
     }
 }
 
@@ -239,6 +257,8 @@ function bindEvents() {
         if (isCooldown) return;
         handleVoiceInput(e);
     });
+
+    setupExerciseEvents();
 }
 
 // --- CORE LOGIC ---
@@ -309,12 +329,24 @@ if (btnCancelInstall && btnConfirmInstall) {
 }
 
 function updateDashboardUI() {
-    document.getElementById('lblKcalTarget').textContent = userProfile.tdee;
+    const burned = dailyData.totalBurned || 0;
+    const target = userProfile.tdee + burned;
+    document.getElementById('lblKcalTarget').textContent = target;
+
+    // Exercise UI
+    const lblKcalBurned = document.getElementById('lblKcalBurned');
+    const lblBurnedVal = document.getElementById('lblBurnedVal');
+    if (burned > 0) {
+        lblKcalBurned.classList.remove('hidden');
+        lblBurnedVal.textContent = Math.round(burned);
+    } else {
+        lblKcalBurned.classList.add('hidden');
+    }
 
     // Update graphic ring
     const radius = 45;
     const circumference = 2 * Math.PI * radius; // ~283
-    const percent = Math.min(dailyData.totalKcal / userProfile.tdee, 1);
+    const percent = Math.min(dailyData.totalKcal / target, 1);
     const offset = circumference - (percent * circumference);
 
     const progressCircle = document.getElementById('kcalProgress');
@@ -699,10 +731,14 @@ async function saveMealToServer() {
 }
 
 function applyMealToDashboard(items, totals, id = null) {
-    dailyData.totalKcal += totals.kcal;
-    dailyData.carbs += totals.carbs;
-    dailyData.protein += totals.protein;
-    dailyData.fat += totals.fat;
+    if (totals.kcal < 0) {
+        dailyData.totalBurned = (dailyData.totalBurned || 0) + Math.abs(totals.kcal);
+    } else {
+        dailyData.totalKcal += totals.kcal;
+        dailyData.carbs += totals.carbs;
+        dailyData.protein += totals.protein;
+        dailyData.fat += totals.fat;
+    }
 
     // Spremamo obrok lokalno u niz za današnji dan
     dailyData.meals.push({
@@ -740,10 +776,10 @@ function renderDailyMeals() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div style="flex:1;">
                     <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px;"><i class="fas fa-clock"></i> ${meal.time}</div>
-                    <div style="font-weight:bold; font-size:0.95rem; color:var(--text-main); line-height:1.4;">${mealDesc}</div>
+                    <div style="font-weight:bold; font-size:0.95rem; color: ${meal.totals.kcal < 0 ? '#00F2FF' : 'var(--text-main)'}; line-height:1.4;">${mealDesc}</div>
                 </div>
                 <div style="font-size:1.3rem; font-weight:900; color:var(--accent-orange); margin-left:15px; text-align:right;">
-                    ${Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
+                    ${meal.totals.kcal < 0 ? '<span style="color:#00F2FF"><i class="fas fa-fire"></i> ' + Math.abs(Math.round(meal.totals.kcal)) + '</span>' : Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
                 </div>
             </div>
             
@@ -814,11 +850,16 @@ async function deleteMeal(index) {
         }
     }
 
-    // Oduzimanje makrosa
-    dailyData.totalKcal -= meal.totals.kcal;
-    dailyData.carbs -= meal.totals.carbs;
-    dailyData.protein -= meal.totals.protein;
-    dailyData.fat -= meal.totals.fat;
+    // Oduzimanje makrosa i kalorija
+    if (meal.totals.kcal < 0) {
+        dailyData.totalBurned = (dailyData.totalBurned || 0) - Math.abs(meal.totals.kcal);
+        if (dailyData.totalBurned < 0) dailyData.totalBurned = 0;
+    } else {
+        dailyData.totalKcal -= meal.totals.kcal;
+        dailyData.carbs -= meal.totals.carbs;
+        dailyData.protein -= meal.totals.protein;
+        dailyData.fat -= meal.totals.fat;
+    }
 
     // Fix floating point sub-zero rendering issues
     if (dailyData.totalKcal < 0) dailyData.totalKcal = 0;
@@ -990,6 +1031,92 @@ function renderStatsUI(meals) {
     });
 
     listEl.innerHTML = html;
+}
+
+// ==========================================
+// EXERCISE MODUL LOGIKA
+// ==========================================
+
+function initExerciseModal() {
+    if (typeof exerciseDB === 'undefined') return;
+
+    let html = '';
+    exerciseDB.forEach((ex, idx) => {
+        html += `<option value="${idx}">${ex.name}</option>`;
+    });
+    exerciseSelect.innerHTML = html;
+    updateExercisePreview();
+}
+
+function updateExercisePreview() {
+    if (typeof exerciseDB === 'undefined' || exerciseSelect.selectedIndex < 0) return;
+
+    const ex = exerciseDB[exerciseSelect.value];
+    exerciseDesc.textContent = ex.description;
+
+    const min = parseInt(inpExerciseDuration.value) || 0;
+    // Formula: (MET * 3.5 * Kilaža / 200) * Minute
+    const burnedKcal = (ex.met * 3.5 * userProfile.weight / 200) * min; // Točno i znanstveno!
+
+    lblExercisePreview.innerHTML = `🔥 -${Math.round(burnedKcal)} <span style="font-size:1rem;">kcal</span>`;
+}
+
+function setupExerciseEvents() {
+    btnAddExercise.addEventListener('click', () => {
+        exerciseModal.classList.remove('hidden');
+        updateExercisePreview(); // Refresh in case weight changed
+    });
+
+    btnCancelExercise.addEventListener('click', () => {
+        exerciseModal.classList.add('hidden');
+    });
+
+    exerciseSelect.addEventListener('change', updateExercisePreview);
+
+    inpExerciseDuration.addEventListener('input', updateExercisePreview);
+
+    btnsDuration.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const addMin = parseInt(e.target.getAttribute('data-min'));
+            let current = parseInt(inpExerciseDuration.value) || 0;
+            inpExerciseDuration.value = current + addMin;
+            updateExercisePreview();
+        });
+    });
+
+    btnConfirmExercise.addEventListener('click', () => {
+        if (typeof exerciseDB === 'undefined') return;
+        const ex = exerciseDB[exerciseSelect.value];
+        const min = parseInt(inpExerciseDuration.value) || 0;
+
+        if (min <= 0) {
+            alert("Unesite ispravno trajanje.");
+            return;
+        }
+
+        const burnedKcal = Math.round((ex.met * 3.5 * userProfile.weight / 200) * min);
+
+        // Formiramo "lažni" AI odgovor za Pending UI, ali s negativnim kalorijama i 0 makro
+        const fakeAIResponse = {
+            items: [
+                {
+                    name: `[VJEŽBA] ${ex.name} (${min} min)`,
+                    estimatedWeightG: min, // Hack da UI gramaže postane UI minute
+                    kcalPer100g: -burnedKcal, // -burnedKcal za 1 minutu hack
+                    macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
+                }
+            ]
+        };
+
+        // Sakrivamo modal
+        exerciseModal.classList.add('hidden');
+        inpExerciseDuration.value = 30; // reset
+
+        // Prikazujemo u pending UI (Hack: stavljam estimatedWeightG na 100 da factor bude 1)
+        fakeAIResponse.items[0].estimatedWeightG = 100;
+
+        renderAIResult(fakeAIResponse);
+    });
 }
 
 // Boot

@@ -96,7 +96,13 @@
     <!-- MAIN DASHBOARD SCREEN -->
     <div id="screenDashboard" class="screen hidden">
         <div class="dashboard-header">
-            <div class="date-display">DANAS, 24. VELJAČE</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="date-display" style="margin-bottom: 0;">DANAS, 24. VELJAČE</div>
+                <button id="btnAddExercise"
+                    style="background: rgba(0,242,255,0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; cursor: pointer;">
+                    <i class="fas fa-running"></i> TRENING
+                </button>
+            </div>
 
             <!-- Main Calorie Circle -->
             <div class="calorie-circle">
@@ -108,6 +114,10 @@
                 <div class="circle-content">
                     <div class="val" id="lblKcalEaten">0</div>
                     <div class="lbl">/ <span id="lblKcalTarget">2500</span> KCAL</div>
+                    <div id="lblKcalBurned" class="hidden"
+                        style="color: #00F2FF; font-size: 0.8rem; font-weight: bold; margin-top: 5px;">
+                        <i class="fas fa-fire"></i> +<span id="lblBurnedVal">0</span> kcal budget
+                    </div>
                 </div>
             </div>
 
@@ -211,7 +221,8 @@
     <script src="food_database.js"></script>
     <script src="food_categories.js"></script>
     <script src="food_categories_2.js"></script>
-    <script src="app.js?v=9"></script>
+    <script src="exercise_database.js"></script>
+    <script src="app.js?v=10"></script>
 </body>
 
 </html>
