@@ -354,6 +354,17 @@ function updateDashboardUI() {
     const progressCircle = document.getElementById('kcalProgress');
     progressCircle.style.strokeDashoffset = offset;
 
+    const burnedTrack = document.getElementById('kcalBurnedTrack');
+    if (burned > 0) {
+        const pctTDEE = Math.min(userProfile.tdee / target, 1);
+        const pctBurned = burned / target;
+        burnedTrack.style.strokeDasharray = `${pctBurned * circumference} ${circumference}`;
+        burnedTrack.style.strokeDashoffset = `-${pctTDEE * circumference}`;
+    } else {
+        burnedTrack.style.strokeDasharray = `0 ${circumference}`;
+        burnedTrack.style.strokeDashoffset = `0`;
+    }
+
     // Color logic
     if (percent > 1.0) progressCircle.style.stroke = '#FF2A2A'; // Red if over
     else progressCircle.style.stroke = 'var(--accent-cyan)';
@@ -777,14 +788,14 @@ function renderDailyMeals() {
         let mealDesc = meal.items.map(item => `${item.name} (${item.estimatedWeightG}g)`).join(', ');
 
         html += `
-        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--accent-cyan); box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${meal.totals.kcal < 0 ? '#00D084' : 'var(--accent-cyan)'}; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div style="flex:1;">
                     <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px;"><i class="fas fa-clock"></i> ${meal.time}</div>
-                    <div style="font-weight:bold; font-size:0.95rem; color: ${meal.totals.kcal < 0 ? '#00F2FF' : 'var(--text-main)'}; line-height:1.4;">${mealDesc}</div>
+                    <div style="font-weight:bold; font-size:0.95rem; color: ${meal.totals.kcal < 0 ? '#00D084' : 'var(--text-main)'}; line-height:1.4;">${mealDesc}</div>
                 </div>
                 <div style="font-size:1.3rem; font-weight:900; color:var(--accent-orange); margin-left:15px; text-align:right;">
-                    ${meal.totals.kcal < 0 ? '<span style="color:#00F2FF"><i class="fas fa-fire"></i> ' + Math.abs(Math.round(meal.totals.kcal)) + '</span>' : Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
+                    ${meal.totals.kcal < 0 ? '<span style="color:#00D084"><i class="fas fa-fire"></i> ' + Math.abs(Math.round(meal.totals.kcal)) + '</span>' : Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
                 </div>
             </div>
             

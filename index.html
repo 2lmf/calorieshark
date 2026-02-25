@@ -108,6 +108,9 @@
             <div class="calorie-circle">
                 <svg viewBox="0 0 100 100">
                     <circle class="bg" cx="50" cy="50" r="45"></circle>
+                    <circle class="burned-track" id="kcalBurnedTrack" cx="50" cy="50" r="45" stroke="#00D084"
+                        stroke-dasharray="0 283" stroke-dashoffset="0" stroke-linecap="round"
+                        style="transition: stroke-dasharray 1s ease-out, stroke-dashoffset 1s ease-out;"></circle>
                     <circle class="progress" id="kcalProgress" cx="50" cy="50" r="45" stroke-dasharray="283"
                         stroke-dashoffset="283"></circle>
                 </svg>
@@ -115,7 +118,7 @@
                     <div class="val" id="lblKcalEaten">0</div>
                     <div class="lbl">/ <span id="lblKcalTarget">2500</span> KCAL</div>
                     <div id="lblKcalBurned" class="hidden"
-                        style="color: #00F2FF; font-size: 0.8rem; font-weight: bold; margin-top: 5px;">
+                        style="color: #00D084; font-size: 0.8rem; font-weight: bold; margin-top: 5px;">
                         <i class="fas fa-fire"></i> +<span id="lblBurnedVal">0</span> kcal budget
                     </div>
                 </div>
@@ -229,9 +232,9 @@
             </div>
 
             <div
-                style="text-align:center; padding:15px; background:rgba(0, 242, 255, 0.1); border-radius:8px; margin-bottom:20px;">
+                style="text-align:center; padding:15px; background:rgba(0, 208, 132, 0.1); border-radius:8px; margin-bottom:20px;">
                 <div style="color:var(--text-muted); font-size:0.9rem;">Potrošene kalorije (live):</div>
-                <div id="lblExercisePreview" style="color:var(--accent-cyan); font-size:1.8rem; font-weight:900;">0 kcal
+                <div id="lblExercisePreview" style="color:#00D084; font-size:1.8rem; font-weight:900;">0 kcal
                 </div>
             </div>
 
@@ -261,7 +264,7 @@
     <script src="food_categories.js"></script>
     <script src="food_categories_2.js"></script>
     <script src="exercise_database.js"></script>
-    <script src="app.js?v=15"></script>
+    <script src="app.js?v=16"></script>
     <link rel="stylesheet" href="styles.css?v=3">
 </body>
 
