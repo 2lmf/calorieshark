@@ -522,7 +522,7 @@ function drawPendingMealUI() {
 
     // Attach Listeners za mjenjanje gramaže
     document.querySelectorAll('.gram-input').forEach(input => {
-        input.addEventListener('input', (e) => {
+        input.addEventListener('change', (e) => {
             const idx = e.target.getAttribute('data-index');
             const newGrams = parseInt(e.target.value) || 0;
             currentUnsavedMeal.items[idx].estimatedWeightG = newGrams;
