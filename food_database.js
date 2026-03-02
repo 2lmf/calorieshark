@@ -232,19 +232,35 @@ const localFoodDB = [
     },
     {
         name: "Svijetlo pivo (Lager pivo)",
-        keywords: ["pivo", "zujacka", "ozujsko", "karlovacko", "svijetlo pivo", "veliko pivo", "malo pivo", "toceno pivo"],
+        keywords: ["pivo", "zujacka", "ozujsko", "karlovacko", "svijetlo pivo", "veliko pivo", "malo pivo", "toceno pivo", "lager pivo", "lager"],
         kcalPer100g: 43,
         macrosPer100g: { carbs: 3.6, protein: 0.5, fat: 0 },
-        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "veliko": 500, "malo": 330, "boca": 500, "limenka": 500 },
+        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "veliko": 500, "malo": 330, "boca": 500, "limenka": 500, "pivo": 500 },
         note: "1 veliko (pola litre) sadrži oko 215 Kcal."
     },
     {
-        name: "Tamno/Crno pivo",
-        keywords: ["crno pivo", "tamno pivo", "tomislav", "stout", "porter"],
+        name: "Tamno / Crno pivo",
+        keywords: ["crno pivo", "tamno pivo", "tomislav", "stout", "porter", "crno"],
         kcalPer100g: 50,
         macrosPer100g: { carbs: 4.5, protein: 0.6, fat: 0 },
         standardUnits: { "ml": 1, "dl": 100, "l": 1000, "veliko": 500, "malo": 330, "boca": 500, "limenka": 500 },
-        note: "Neznatno kaloričnije i jače od svijetlog."
+        note: "Neznatno kaloričnije i jače od svijetlog. 1 veliko (pola litre) = 250 kcal."
+    },
+    {
+        name: "Pšenično pivo (Hefeweizen)",
+        keywords: ["psenicno pivo", "psenicno", "psenica", "paulaner", "erdinger", "weizen", "psenicno pivo", "psenicno", "pšenično pivo", "pšenično"],
+        kcalPer100g: 45,
+        macrosPer100g: { carbs: 3.5, protein: 0.5, fat: 0 },
+        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "veliko": 500, "malo": 330, "boca": 500, "limenka": 500, "pivo": 500 },
+        note: "Kalorijski slično lageru, oko 225 kcal na pola litre."
+    },
+    {
+        name: "Craft pivo (IPA / APA / Pale Ale)",
+        keywords: ["craft pivo", "ipa", "apa", "pale ale", "ale pivo", "zahmeljeno pivo"],
+        kcalPer100g: 55,
+        macrosPer100g: { carbs: 4.0, protein: 0.6, fat: 0 },
+        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "veliko": 500, "malo": 330, "boca": 500, "limenka": 500 },
+        note: "Craft piva i Pale Ale-ovi obično imaju veći postotak alkohola i ekstrakta pa su kaloričnija. 1 veliko = cca 275 kcal."
     },
     {
         name: "Bijelo vino",
@@ -261,6 +277,22 @@ const localFoodDB = [
         macrosPer100g: { carbs: 2.6, protein: 0.1, fat: 0 },
         standardUnits: { "ml": 1, "dl": 100, "l": 1000, "casa": 150, "deci": 100 },
         note: "1 čaša restoranske mjere (1.5 dl) = cca 125 Kcal."
+    },
+    {
+        name: "Gemišt / Bevanda / Špricer",
+        keywords: ["gemist", "bevanda", "spricer", "casa gemista", "litra i voda", "bambus"],
+        kcalPer100g: 50,
+        macrosPer100g: { carbs: 1.5, protein: 0, fat: 0 },
+        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "casa": 200 },
+        note: "Pola vino pola mineralna. 1 čaša (2 dl) = oko 100 Kcal."
+    },
+    {
+        name: "Pelinkovac / Jägermeister / Biteri",
+        keywords: ["pelinkovac", "pelin", "jegermeister", "jeger", "amaro", "campari", "biha", "rakija"],
+        kcalPer100g: 250,
+        macrosPer100g: { carbs: 12, protein: 0, fat: 0 },
+        standardUnits: { "ml": 1, "dl": 100, "l": 1000, "cep": 30, "kratko": 30, "duplo": 60 },
+        note: "Jako kalorično zbog šećera i alkohola. Žestice imaju oko 75 kcal po standardnoj (0.03l) čašici (čepa)."
     },
     {
         name: "Coca-Cola (Regularna)",
@@ -511,6 +543,40 @@ const localFoodDB = [
         macrosPer100g: { carbs: 5, protein: 80, fat: 4 },
         standardUnits: { "mjerica": 30, "porcija": 30, "scoop": 30 },
         note: "1 standardna mjerica (scoop) koja dođe u kutiji teži oko 30g."
+    },
+    // === JUHE ===
+    {
+        name: "Bistra pileća juha / Goveđa juha",
+        keywords: ["juha", "pileca juha", "goveda juha", "bistra juha", "tanjur juhe", "juhu", "pilecu juhu", "domaca juha"],
+        kcalPer100g: 30,
+        macrosPer100g: { carbs: 3, protein: 2, fat: 1 },
+        standardUnits: { "tanjur": 250, "porcija": 250, "ml": 1, "dl": 100 },
+        note: "Default prepoznata juha. 1 standardni tanjur je oko 250ml (75 kcal)."
+    },
+    {
+        name: "Riblja juha",
+        keywords: ["riblja juha", "tanjur riblje juhe", "riblju juhu"],
+        kcalPer100g: 40,
+        macrosPer100g: { carbs: 3, protein: 4, fat: 1.5 },
+        standardUnits: { "tanjur": 250, "porcija": 250, "ml": 1, "dl": 100 },
+        note: "Malo bogatija proteinima. 1 standardni tanjur je oko 250ml (100 kcal)."
+    },
+    // === MORSKI PLODOVI ===
+    {
+        name: "Škampi na žaru (ili kuhani)",
+        keywords: ["skampi", "skampe", "skampi zar", "skampi na zaru", "peceni skampi", "kuhani skampi", "skampi zaru", "porcija skampa"],
+        kcalPer100g: 90,
+        macrosPer100g: { carbs: 0, protein: 18, fat: 1.5 },
+        standardUnits: { "porcija": 300, "kom": 30, "grama": 1 },
+        note: "Čisto meso škampa ima jako malo kalorija. Porcija s ljuskama od 300g donosi oko 100g čistog mesa."
+    },
+    {
+        name: "Škampi na buzaru",
+        keywords: ["skampi na buzaru", "buzara", "skampe na buzaru", "buzaru"],
+        kcalPer100g: 130,
+        macrosPer100g: { carbs: 2, protein: 15, fat: 6 },
+        standardUnits: { "porcija": 350, "kom": 30, "grama": 1 },
+        note: "Umak (buzara) sadrži maslinovo ulje, vino, krušne mrvice. Porcija ima više kalorija zbog safta."
     }
 ];
 
@@ -540,11 +606,30 @@ function searchLocalFoodDB(query) {
     let foundUnitType = null;
     let foundUnitFactor = null;
 
+    // Levenshtein distance funkcija
+    function levenshtein(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+        let matrix = [];
+        for (let i = 0; i <= b.length; i++) { matrix[i] = [i]; }
+        for (let j = 0; j <= a.length; j++) { matrix[0][j] = j; }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
     // Lista definiranih namirnica iz baze sa Scoreom pretrage
     let bestMatch = null;
-    let bestScore = -1;
+    let bestScore = -1; // Sada manji score znaci vecu udaljenost, mi trazimo blago bodovanje
 
-    // Prvo "fuzzy" pronalazimo bazu:
+    // Advanced fuzzy pronalazak baze:
     localFoodDB.forEach(food => {
         let score = 0;
 
@@ -553,13 +638,21 @@ function searchLocalFoodDB(query) {
 
         food.keywords.forEach(kw => {
             const normalizedKw = normalizeString(kw);
+
+            // 1. Exact contains (Kao i prije)
             if (normalizedQuery.includes(normalizedKw)) {
-                // Ako upit recimo "2 jaja na oko" sadrži keyword "jaja na oko" -> To je bingo! Ovisno o duljini matcha
                 score += normalizedKw.length * 2;
+            }
+
+            // 2. Levenshtein fuzzy match za tipfelere
+            const distance = levenshtein(normalizedQuery, normalizedKw);
+            // Ako je razlika vrlo mala u odnosu na duljinu rijeci (npr 1 ili 2 tipfelera)
+            if (distance <= 2 && normalizedKw.length > 4) {
+                score += (normalizedKw.length * 2) - distance; // Dodaj bodove ali umanji za greske
             }
         });
 
-        if (score > bestScore && score > 8) { // Prag bodova da ne gađa naslijepo (manje od 8 bodova je mozda samo slovo pogodio)
+        if (score > bestScore && score > 6) { // Prag bodova, snizen zbog fuzzy-a
             bestScore = score;
             bestMatch = food;
         }
@@ -572,9 +665,17 @@ function searchLocalFoodDB(query) {
     // Pročeprkajmo preostali dio riječi (normalizedQuery) da vidimo jel se spominju mjerne jedinice iz tekućeg namirničkog rječnika
     if (bestMatch.standardUnits) {
         Object.keys(bestMatch.standardUnits).forEach(unitKw => {
-            if (normalizedQuery.includes(unitKw)) {
+            const unitKwNorm = normalizeString(unitKw);
+            if (normalizedQuery.includes(unitKwNorm)) {
                 foundUnitType = unitKw;
                 foundUnitFactor = bestMatch.standardUnits[unitKw];
+            } else {
+                // Pokusaj fuzzy i za mjernu jedinicu (npr porija umjesto porcija)
+                const dist = levenshtein(normalizedQuery, unitKwNorm);
+                if (dist <= 1 && unitKwNorm.length >= 4) {
+                    foundUnitType = unitKw;
+                    foundUnitFactor = bestMatch.standardUnits[unitKw];
+                }
             }
         });
     }
@@ -584,15 +685,19 @@ function searchLocalFoodDB(query) {
         // Fallback: Ako je namirnica tekućina (ima ml) tražimo ml, ako tvrda kom. Inače uzimamo prvi key.
         if (bestMatch.standardUnits['kom']) { foundUnitType = 'kom'; foundUnitFactor = bestMatch.standardUnits['kom']; }
         else if (bestMatch.standardUnits['komad']) { foundUnitType = 'komad'; foundUnitFactor = bestMatch.standardUnits['komad']; }
+        else if (bestMatch.standardUnits['pivo']) { foundUnitType = 'pivo'; foundUnitFactor = bestMatch.standardUnits['pivo']; }
+        else if (bestMatch.standardUnits['veliko']) { foundUnitType = 'veliko'; foundUnitFactor = bestMatch.standardUnits['veliko']; }
         else if (bestMatch.standardUnits['snita']) { foundUnitType = 'snita'; foundUnitFactor = bestMatch.standardUnits['snita']; }
-        else if (bestMatch.standardUnits['ml']) { foundUnitType = 'ml'; foundUnitFactor = 1; } // "200 mlijeka" -> pretpostavka 200ml
-        else if (bestMatch.standardUnits['salica']) { foundUnitType = 'salica'; foundUnitFactor = bestMatch.standardUnits['salica']; }
+        else if (bestMatch.standardUnits['tanjur']) { foundUnitType = 'tanjur'; foundUnitFactor = bestMatch.standardUnits['tanjur']; }
         else if (bestMatch.standardUnits['porcija']) { foundUnitType = 'porcija'; foundUnitFactor = bestMatch.standardUnits['porcija']; }
+        else if (bestMatch.standardUnits['ml']) { foundUnitType = 'ml'; foundUnitFactor = 1; }
+        else if (bestMatch.standardUnits['dl']) { foundUnitType = 'dl'; foundUnitFactor = 100; }
+        else if (bestMatch.standardUnits['salica']) { foundUnitType = 'salica'; foundUnitFactor = bestMatch.standardUnits['salica']; }
         else {
             // Skroz slijepi fallback
             const firstKey = Object.keys(bestMatch.standardUnits)[0];
             foundUnitType = firstKey;
-            foundUnitFactor = bestMatch.standardUnits[firstKey];
+            foundUnitFactor = bestMatch.standardUnits[firstKey] || 1;
         }
     }
 

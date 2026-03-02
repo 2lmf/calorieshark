@@ -1,11 +1,59 @@
+// --- DEBUGGING & ERROR HANDLING ---
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+    const errorMsg = `ERROR: ${msg}\nLine: ${lineNo}\nURL: ${url}`;
+    console.error(errorMsg);
+    if (!msg.includes('ResizeObserver')) {
+        alert(errorMsg);
+    }
+    return false;
+};
+console.log("CalorieShark v38 Initializing...");
+
 // --- STATE MANAGEMENT ---
+function safeGetElement(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.warn(`Element with ID "${id}" NOT found in DOM!`);
+    }
+    return el;
+}
+
+const safeLocalStorage = {
+    getItem: function (key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            console.warn(`localStorage getItem error for key "${key}":`, e);
+            return null;
+        }
+    },
+    setItem: function (key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.warn(`localStorage setItem error for key "${key}":`, e);
+        }
+    }
+};
+
 let userProfile = {
     username: '',
+    email: '',
     gender: 'male',
     age: 30,
     height: 180,
     weight: 85,
-    tdee: 2500
+    tdee: 2500,
+    dietPrefs: {
+        vege: false,
+        vegan: false,
+        glutenFree: false
+    }
+};
+
+let visionEnergy = {
+    charges: 3,
+    lastUsed: null // Timestamp of last deduction
 };
 
 // Daily Data
@@ -50,6 +98,13 @@ const exercisePillButtons = document.getElementById('exercisePillButtons');
 const btnCancelExercise = document.getElementById('btnCancelExercise');
 const btnConfirmExercise = document.getElementById('btnConfirmExercise');
 const btnsDuration = document.querySelectorAll('.btn-duration');
+
+// Barcode Scanner DOM
+const barcodeModal = document.getElementById('barcodeModal');
+const scannerStatus = document.getElementById('scannerStatus');
+const scannerFallback = document.getElementById('scannerFallback');
+const btnScannerCameraFallback = document.getElementById('btnScannerCameraFallback');
+const btnScannerCancel = document.getElementById('btnScannerCancel');
 
 // Cropper DOM Elements
 const cropModal = document.getElementById('cropModal');
@@ -120,17 +175,84 @@ const installModal = document.getElementById('installModal');
 const btnCancelInstall = document.getElementById('btnCancelInstall');
 const btnConfirmInstall = document.getElementById('btnConfirmInstall');
 
+// --- SCANNER STATE ---
+let html5QrCode = null;
+let scannerTimeoutTimer = null;
+
 // --- INITIALIZATION ---
 function init() {
+    bindEvents(); // Bind events FIRST to avoid freezing UI if other things fail
     registerServiceWorker();
     loadDailyData();
     loadProfile();
+    loadVisionEnergy();
     initExerciseModal();
-    bindEvents();
+
+    // Start energy regeneration loop
+    setInterval(checkVisionEnergy, 60000); // Check every minute
+}
+
+function loadVisionEnergy() {
+    const saved = safeLocalStorage.getItem('calorieShark_vision_energy');
+    if (saved) {
+        visionEnergy = JSON.parse(saved);
+    }
+    checkVisionEnergy();
+}
+
+function checkVisionEnergy() {
+    if (visionEnergy.charges < 3 && visionEnergy.lastUsed) {
+        const now = new Date().getTime();
+        const diffMs = now - visionEnergy.lastUsed;
+        const diffMins = Math.floor(diffMs / 60000);
+
+        // 20 minutes to regenerate 1 charge
+        if (diffMins >= 20) {
+            const chargesToAdd = Math.floor(diffMins / 20);
+            visionEnergy.charges = Math.min(3, visionEnergy.charges + chargesToAdd);
+
+            if (visionEnergy.charges < 3) {
+                // If not full, advance the lastUsed timestamp to the point where the last charge regenerated
+                visionEnergy.lastUsed += chargesToAdd * 20 * 60000;
+            } else {
+                visionEnergy.lastUsed = null; // Full
+            }
+            saveVisionEnergy();
+        }
+    }
+    renderVisionEnergy();
+}
+
+function useVisionEnergy() {
+    if (visionEnergy.charges > 0) {
+        visionEnergy.charges--;
+        if (!visionEnergy.lastUsed) {
+            visionEnergy.lastUsed = new Date().getTime(); // Start the timer if it wasn't running
+        }
+        saveVisionEnergy();
+        renderVisionEnergy();
+        return true;
+    }
+    return false;
+}
+
+function saveVisionEnergy() {
+    safeLocalStorage.setItem('calorieShark_vision_energy', JSON.stringify(visionEnergy));
+}
+
+function renderVisionEnergy() {
+    const bolts = document.querySelectorAll('.energy-bolt');
+    bolts.forEach((bolt, index) => {
+        if (index < visionEnergy.charges) {
+            bolt.classList.remove('used');
+        } else {
+            bolt.classList.add('used');
+        }
+    });
 }
 
 function loadDailyData() {
-    const saved = localStorage.getItem('calorieShark_daily');
+    const saved = safeLocalStorage.getItem('calorieShark_daily');
     const today = new Date().toLocaleDateString('hr-HR');
 
     if (saved) {
@@ -152,20 +274,21 @@ function loadDailyData() {
 
 function saveDailyData() {
     const today = new Date().toLocaleDateString('hr-HR');
-    localStorage.setItem('calorieShark_daily', JSON.stringify({
+    safeLocalStorage.setItem('calorieShark_daily', JSON.stringify({
         date: today,
         data: dailyData
     }));
 }
 
 function loadProfile() {
-    const saved = localStorage.getItem('calorieShark_profile');
+    const saved = safeLocalStorage.getItem('calorieShark_profile');
 
     if (saved) {
         userProfile = JSON.parse(saved);
 
         // Populate inputs if they go back to settings
         document.getElementById('inpUsername').value = userProfile.username || '';
+        document.getElementById('inpEmail').value = userProfile.email || '';
         document.getElementById('inpAge').value = userProfile.age || 30;
         document.getElementById('inpHeight').value = userProfile.height || 180;
         document.getElementById('inpWeight').value = userProfile.weight || 85;
@@ -179,11 +302,136 @@ function loadProfile() {
             }
         });
 
+        // Populate checkboxes
+        if (userProfile.dietPrefs) {
+            document.getElementById('chkSettingsVege').checked = userProfile.dietPrefs.vege || false;
+            document.getElementById('chkSettingsVegan').checked = userProfile.dietPrefs.vegan || false;
+            document.getElementById('chkSettingsGlutenFree').checked = userProfile.dietPrefs.glutenFree || false;
+        }
+
         showScreen('dashboard');
         updateDashboardUI();
     } else {
         showScreen('onboarding');
     }
+}
+
+function saveProfile() {
+    safeLocalStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
+}
+
+// --- BARCODE SCANNER LOGIC ---
+function openScanner() {
+    barcodeModal.classList.remove('hidden');
+    document.body.classList.add('body-lock');
+    scannerStatus.textContent = "Pokrećem kameru...";
+    scannerFallback.classList.add('hidden');
+
+    // Mala odgoda da se DOM stigne renderirati prije pokretanja kamere
+    setTimeout(() => {
+        html5QrCode = new Html5Qrcode("scannerViewport");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                // Success!
+                handleScanSuccess(decodedText);
+            },
+            (errorMessage) => {
+                // Scanning...
+            }
+        ).catch(err => {
+            console.error("Greška pri pokretanju skenera:", err);
+            scannerStatus.style.color = "var(--accent-orange)";
+            scannerStatus.textContent = "Greška kamere: " + err;
+        });
+
+        // Pokreni timer za automatski fallback (7 sekundi)
+        if (scannerTimeoutTimer) clearTimeout(scannerTimeoutTimer);
+        scannerTimeoutTimer = setTimeout(() => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                showScannerFallback();
+            }
+        }, 7000);
+
+    }, 300);
+}
+
+function closeScanner() {
+    if (scannerTimeoutTimer) clearTimeout(scannerTimeoutTimer);
+    document.body.classList.remove('body-lock');
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            html5QrCode = null;
+            barcodeModal.classList.add('hidden');
+        }).catch(err => {
+            console.error("Greška pri gašenju skenera:", err);
+            barcodeModal.classList.add('hidden');
+        });
+    } else {
+        barcodeModal.classList.add('hidden');
+    }
+}
+
+async function handleScanSuccess(decodedText) {
+    if (scannerTimeoutTimer) clearTimeout(scannerTimeoutTimer);
+    if (html5QrCode) {
+        await html5QrCode.stop();
+        html5QrCode = null;
+    }
+
+    scannerStatus.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Tražim proizvod: <strong>${decodedText}</strong>...`;
+    lookupProduct(decodedText);
+}
+
+async function lookupProduct(barcode) {
+    try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,nutriments,image_url`);
+        const data = await response.json();
+
+        if (data.status === 1 && data.product) {
+            const p = data.product;
+            const n = p.nutriments;
+
+            // Mapiramo podatke
+            const mappedResult = {
+                items: [{
+                    name: p.product_name || "Nepoznat proizvod",
+                    estimatedWeightG: 100, // Default porcija
+                    kcalPer100g: Math.round(n['energy-kcal_100g'] || 0),
+                    macrosPer100g: {
+                        carbs: Math.round(n.carbohydrates_100g || 0),
+                        protein: Math.round(n.proteins_100g || 0),
+                        fat: Math.round(n.fat_100g || 0)
+                    }
+                }]
+            };
+
+            barcodeModal.classList.add('hidden');
+            renderAIResult(mappedResult);
+        } else {
+            showScannerFallback();
+        }
+    } catch (err) {
+        console.error("Greška pri upitu baze:", err);
+        showScannerFallback();
+    }
+}
+
+function showScannerFallback() {
+    if (scannerTimeoutTimer) clearTimeout(scannerTimeoutTimer);
+
+    // Ako je upaljeno skeniranje, ugasi ga da ne troši bateriju dok korisnik čita poruku
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            html5QrCode = null;
+        }).catch(err => console.error(err));
+    }
+
+    scannerStatus.textContent = "";
+    scannerFallback.classList.remove('hidden');
 }
 
 function bindEvents() {
@@ -198,22 +446,42 @@ function bindEvents() {
 
     // Save Profile
     document.getElementById('btnSaveProfile').addEventListener('click', () => {
-        const usernameVal = document.getElementById('inpUsername').value.trim();
-        if (!usernameVal) {
-            alert("Molimo unesite korisničko ime!");
-            return;
+        try {
+            const usernameVal = document.getElementById('inpUsername').value.trim();
+            const emailVal = document.getElementById('inpEmail').value.trim();
+
+            if (!usernameVal || !emailVal) {
+                alert("Molimo unesite korisničko ime i e-mail adresu!");
+                return;
+            }
+
+            userProfile.username = usernameVal;
+            userProfile.email = emailVal;
+            // Defensive parsing to prevent NaN errors freezing the UI
+            userProfile.age = Math.abs(parseInt(document.getElementById('inpAge').value)) || 30;
+            userProfile.height = Math.abs(parseInt(document.getElementById('inpHeight').value)) || 180;
+            userProfile.weight = Math.abs(parseFloat(document.getElementById('inpWeight').value)) || 85;
+
+            // Save Onboarding Diet Prefs
+            const chkVege = document.getElementById('chkOnbVege');
+            const chkVegan = document.getElementById('chkOnbVegan');
+            const chkGluten = document.getElementById('chkOnbGlutenFree');
+
+            userProfile.dietPrefs = {
+                vege: chkVege ? chkVege.checked : false,
+                vegan: chkVegan ? chkVegan.checked : false,
+                glutenFree: chkGluten ? chkGluten.checked : false
+            };
+
+            calculateTDEE();
+            safeLocalStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
+
+            showScreen('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateDashboardUI();
+        } catch (e) {
+            alert("Greska kod spremanja profila: " + e.message);
         }
-
-        userProfile.username = usernameVal;
-        userProfile.age = parseInt(document.getElementById('inpAge').value);
-        userProfile.height = parseInt(document.getElementById('inpHeight').value);
-        userProfile.weight = parseFloat(document.getElementById('inpWeight').value);
-
-        calculateTDEE();
-        localStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
-
-        showScreen('dashboard');
-        updateDashboardUI();
     });
 
     // Camera FAB
@@ -221,12 +489,30 @@ function bindEvents() {
         inpCamera.click();
     });
 
+    // Barcode Button
+    const btnBarcode = document.getElementById('btnBarcode');
+    if (btnBarcode) {
+        btnBarcode.addEventListener('click', openScanner);
+    }
+
+    // Barcode Modal controls
+    if (btnScannerCancel) btnScannerCancel.addEventListener('click', closeScanner);
+    document.getElementById('btnCloseScanner').addEventListener('click', closeScanner);
+
+    if (btnScannerCameraFallback) {
+        btnScannerCameraFallback.addEventListener('click', () => {
+            closeScanner();
+            inpCamera.click(); // Trigger regular AI camera flow
+        });
+    }
+
     inpCamera.addEventListener('change', handleImageUpload);
 
     // Settings Button
     document.getElementById('btnSettings').addEventListener('click', () => {
         // Pre-fill with current profile
         document.getElementById('inpSettingsUsername').value = userProfile.username;
+        document.getElementById('inpSettingsEmail').value = userProfile.email || '';
         document.getElementById('inpSettingsAge').value = userProfile.age;
         document.getElementById('inpSettingsHeight').value = userProfile.height;
         document.getElementById('inpSettingsWeight').value = userProfile.weight;
@@ -254,21 +540,39 @@ function bindEvents() {
 
     // Save Settings Button
     document.getElementById('btnSaveSettings').addEventListener('click', () => {
-        const un = document.getElementById('inpSettingsUsername').value.trim();
-        const a = parseInt(document.getElementById('inpSettingsAge').value);
-        const h = parseInt(document.getElementById('inpSettingsHeight').value);
-        const w = parseFloat(document.getElementById('inpSettingsWeight').value);
-        const activeBtn = document.querySelector('#settingsToggleGroup .toggle-btn.active');
-        const g = activeBtn ? activeBtn.dataset.gender : 'male';
+        try {
+            const un = document.getElementById('inpSettingsUsername').value.trim();
+            const em = document.getElementById('inpSettingsEmail').value.trim();
+            const a = Math.abs(parseInt(document.getElementById('inpSettingsAge').value)) || 30;
+            const h = Math.abs(parseInt(document.getElementById('inpSettingsHeight').value)) || 180;
+            const w = Math.abs(parseFloat(document.getElementById('inpSettingsWeight').value)) || 85;
+            const activeBtn = document.querySelector('#settingsToggleGroup .toggle-btn.active');
+            const g = activeBtn ? activeBtn.dataset.gender : 'male';
 
-        if (!un) { alert('Unesi korisničko ime!'); return; }
+            if (!un || !em) { alert('Unesi korisničko ime i e-mail!'); return; }
 
-        userProfile = { username: un, age: a, height: h, weight: w, gender: g };
-        calculateTDEE();
-        localStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
+            userProfile = { username: un, email: em, age: a, height: h, weight: w, gender: g };
 
-        showScreen('dashboard');
-        updateDashboardUI();
+            // Save Diet Prefs from settings
+            const chkVege = document.getElementById('chkSettingsVege');
+            const chkVegan = document.getElementById('chkSettingsVegan');
+            const chkGluten = document.getElementById('chkSettingsGlutenFree');
+
+            userProfile.dietPrefs = {
+                vege: chkVege ? chkVege.checked : false,
+                vegan: chkVegan ? chkVegan.checked : false,
+                glutenFree: chkGluten ? chkGluten.checked : false
+            };
+
+            calculateTDEE();
+            safeLocalStorage.setItem('calorieShark_profile', JSON.stringify(userProfile));
+
+            showScreen('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateDashboardUI();
+        } catch (e) {
+            alert("Greska kod postavki: " + e.message);
+        }
     });
 
     // Stats Button
@@ -299,10 +603,70 @@ function bindEvents() {
         }
     });
 
+    // Uklonjen isCooldown return za glasovni gumb da korisnik može 
+    // pritisnuti i snimiti glasovni upit bez da troši AI vizijski cooldown
     btnVoice.addEventListener('click', (e) => {
-        if (isCooldown) return;
         handleVoiceInput(e);
     });
+
+    // Shark Advisor UI Toggle
+    const advisorCard = document.getElementById('advisorCard');
+    const advisorExpandedSection = document.getElementById('advisorExpandedSection');
+    const advisorExpandedIcon = document.getElementById('advisorExpandedIcon');
+    const btnRefreshAdvisor = document.getElementById('btnRefreshAdvisor');
+
+    if (advisorCard && advisorExpandedSection) {
+        // Toggle on clicking the main card
+        advisorCard.addEventListener('click', (e) => {
+            // Prevent toggling if clicked exactly on the refresh button
+            if (e.target.closest('#btnRefreshAdvisor')) return;
+
+            advisorExpandedSection.classList.toggle('hidden');
+            if (advisorExpandedSection.classList.contains('hidden')) {
+                advisorExpandedIcon.classList.remove('fa-chevron-up');
+                advisorExpandedIcon.classList.add('fa-chevron-down');
+            } else {
+                advisorExpandedIcon.classList.remove('fa-chevron-down');
+                advisorExpandedIcon.classList.add('fa-chevron-up');
+            }
+        });
+
+        // Refresh explicitly
+        if (btnRefreshAdvisor) {
+            btnRefreshAdvisor.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                renderSharkAdvisor();
+            });
+        }
+
+        // Filter Buttons explicitly
+        const advFilterBtns = document.querySelectorAll('.adv-filter-btn');
+        advFilterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Toggle active state only
+                if (btn.classList.contains('active')) {
+                    btn.classList.remove('active');
+                    btn.style.background = 'transparent';
+                    btn.style.color = btn.style.borderColor; // Reset text color
+                } else {
+                    advFilterBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.background = 'transparent';
+                        b.style.color = b.style.borderColor; // Reset all
+                    });
+                    btn.classList.add('active');
+                    btn.style.background = btn.style.borderColor; // Fill it with color
+                    btn.style.color = '#111'; // Dark text for filled bg
+                }
+
+                renderSharkAdvisor(); // Refresh after filter selection
+            });
+        });
+    }
 
     setupExerciseEvents();
 }
@@ -319,12 +683,14 @@ function calculateTDEE() {
 
 function showScreen(screenId) {
     Object.values(screens).forEach(s => s.classList.add('hidden'));
+    document.getElementById('fabContainer').classList.add('hidden'); // Hide the new container
     fabCamera.classList.add('hidden');
     textInputBar.classList.add('hidden');
 
     if (screenId === 'dashboard') {
         screens.dashboard.classList.remove('hidden');
         fabCamera.classList.remove('hidden');
+        document.getElementById('fabContainer').classList.remove('hidden'); // Show container instead of just fab
         textInputBar.classList.remove('hidden');
     } else if (screenId === 'onboarding') {
         screens.onboarding.classList.remove('hidden');
@@ -338,7 +704,6 @@ function showScreen(screenId) {
     }
 }
 
-// PWA Service Worker & Install Logic
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js')
@@ -352,9 +717,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    // Show our custom modal if they haven't installed it
+    // Show our custom modal if they haven't installed it and ARE LOGGED IN
     setTimeout(() => {
-        installModal.classList.remove('hidden');
+        if (userProfile.username && userProfile.username.length > 0 && !document.getElementById('screenOnboarding').classList.contains('hidden') === false) {
+            installModal.classList.remove('hidden');
+        }
     }, 2000); // Pokazi 2 sekunde nakon loada
 });
 
@@ -377,6 +744,16 @@ if (btnCancelInstall && btnConfirmInstall) {
 }
 
 function updateDashboardUI() {
+    // Dynamic Date Update
+    const lblDateToday = document.getElementById('lblDateToday');
+    if (lblDateToday) {
+        const now = new Date();
+        const options = { day: 'numeric', month: 'long' };
+        let dateStr = now.toLocaleDateString('hr-HR', options).toUpperCase();
+        // Ensure format is "DANAS, 26. VELJAČE"
+        lblDateToday.textContent = `DANAS, ${dateStr}`;
+    }
+
     const burned = dailyData.totalBurned || 0;
     const target = userProfile.tdee; // NO INCREASING TARGET TDEE
 
@@ -423,8 +800,193 @@ function updateDashboardUI() {
     document.getElementById('lblProtein').textContent = Math.round(dailyData.protein) + "g";
     document.getElementById('lblFat').textContent = Math.round(dailyData.fat) + "g";
 
+    // Prikaz Shark Advisora
+    renderSharkAdvisor();
+
     // Obavezno iscrtaj povijest
     renderDailyMeals();
+}
+
+function renderSharkAdvisor() {
+    const list = document.getElementById('advisorSuggestionsList');
+    if (!list) return;
+
+    if (!advisorMeals || advisorMeals.length === 0) {
+        list.innerHTML = `<p style="font-size:0.8rem; color:var(--text-muted); text-align:center;">Baza savjeta je trenutno prazna.</p>`;
+        return;
+    }
+
+    const burned = dailyData.totalBurned || 0;
+    const target = userProfile.tdee;
+    const remainingKcal = Math.max(0, target - dailyData.totalKcal + burned);
+
+    document.getElementById('lblAdvisorTarget').textContent = Math.round(remainingKcal);
+
+    // Ako je korisnik odabrao iskljucivi filter na samom vizualnom panelu dashboarda
+    const activeFilterBtn = document.querySelector('.adv-filter-btn.active');
+    const explicitFilter = activeFilterBtn ? activeFilterBtn.dataset.filter : null;
+
+    let validMeals = [];
+
+    if (explicitFilter === 'favorite') {
+        // Logika za 'Moji favoriti': Pronađi obroke koji su eksplicitno označeni zvjezdicom
+
+        // 1. Favoriti iz povijesti
+        let uniqueFavs = {};
+        dailyData.meals.forEach(m => {
+            if (m.isFavorite && m.totals.kcal > 0) {
+                let namesStr = m.items.map(i => i.name).sort().join(', ');
+                if (!uniqueFavs[namesStr]) {
+                    uniqueFavs[namesStr] = m;
+                }
+            }
+        });
+
+        validMeals = Object.values(uniqueFavs).map(favMeal => {
+            const recipeStr = favMeal.items.map(i => `${i.name} (${i.estimatedWeightG}g)`).join(' + ');
+            return {
+                name: "Moj Favorit",
+                tags: ['favorite'],
+                kcal: favMeal.totals.kcal,
+                protein: Math.round(favMeal.totals.protein || 0),
+                carbs: Math.round(favMeal.totals.carbs || 0),
+                fat: Math.round(favMeal.totals.fat || 0),
+                recipe: recipeStr,
+                originalItems: favMeal.items
+            };
+        });
+
+        // 2. Favoriti iz Advisor baze (oni koje je korisnik "zvijezdao" u meniju)
+        const advisorFavNames = JSON.parse(localStorage.getItem('calorieShark_advisorFavs') || '[]');
+        if (typeof advisorMeals !== 'undefined') {
+            const advisorFavs = advisorMeals.filter(m => advisorFavNames.includes(m.name));
+            validMeals = [...validMeals, ...advisorFavs];
+        }
+    } else {
+        // Standardna logika iz baze savjeta
+        validMeals = advisorMeals.filter(meal => {
+            if (meal.kcal > remainingKcal + 100) return false;
+
+            if (explicitFilter && explicitFilter !== 'favorite') {
+                if (!meal.tags.includes(explicitFilter)) return false;
+            } else if (userProfile.dietPrefs) {
+                if (userProfile.dietPrefs.vege && !meal.tags.includes("vege")) return false;
+                if (userProfile.dietPrefs.vegan && !meal.tags.includes("vegan")) return false;
+                if (userProfile.dietPrefs.glutenFree && !meal.tags.includes("glutenFree")) return false;
+            }
+            return true;
+        });
+
+        // Soft fallback
+        if (validMeals.length === 0) {
+            if (explicitFilter) {
+                validMeals = advisorMeals.filter(meal => meal.tags.includes(explicitFilter));
+            } else {
+                validMeals = advisorMeals.filter(meal => meal.kcal <= remainingKcal + 100);
+            }
+        }
+    }
+
+    // Odaberi 3 random opcije
+    let shownMeals = [];
+    if (validMeals.length <= 3) {
+        shownMeals = validMeals;
+    } else {
+        const shuffled = [...validMeals].sort(() => 0.5 - Math.random());
+        shownMeals = shuffled.slice(0, 3);
+    }
+
+    if (shownMeals.length === 0) {
+        list.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted); text-align:center;">Nemam ti što ponuditi za preostali budžet. Popij vodu!</p>`;
+        return;
+    }
+
+    let html = '';
+    shownMeals.forEach(meal => {
+        // Iscrtavanje bedzeva za tagove
+        let tagsHtml = '';
+        meal.tags.forEach(t => {
+            if (t === 'vege') tagsHtml += `<span style="background:rgba(0,208,132,0.1); color:#00D084; padding:2px 6px; border-radius:10px; font-size:0.65rem; margin-right:4px;">Vege</span>`;
+            if (t === 'vegan') tagsHtml += `<span style="background:rgba(0,255,100,0.1); color:#00FF64; padding:2px 6px; border-radius:10px; font-size:0.65rem; margin-right:4px;">Vegan</span>`;
+            if (t === 'glutenFree') tagsHtml += `<span style="background:rgba(255,165,0,0.1); color:var(--accent-orange); padding:2px 6px; border-radius:10px; font-size:0.65rem; margin-right:4px;">GF</span>`;
+        });
+
+        // Provjeri je li ovaj specifični obrok favorit (ako je iz advisor baze, tražimo u localStorage)
+        const savedFavs = JSON.parse(localStorage.getItem('calorieShark_advisorFavs') || '[]');
+        const isFav = savedFavs.includes(meal.name);
+
+        const mealJson = JSON.stringify(meal).replace(/'/g, "&#39;");
+
+        html += `
+        <div class="advisor-item" data-meal='${mealJson}' style="background: var(--bg-card); cursor: pointer; border-radius: 8px; padding: 10px; display:flex; flex-direction:column; gap:8px; border-left: 3px solid #00D084; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.1s; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="flex:1;">
+                    <h4 style="margin:0; font-size:0.95rem; color:var(--text-main);">${meal.name}</h4>
+                    <div style="margin-top:4px;">${tagsHtml}</div>
+                </div>
+                <div style="text-align:right; display:flex; align-items:center; gap:10px;">
+                    <div>
+                        <div style="color:var(--accent-cyan); font-weight:bold; font-size:0.9rem;">${meal.kcal} kcal</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">P:${meal.protein}g C:${meal.carbs}g F:${meal.fat}g</div>
+                    </div>
+                    <i class="${isFav ? 'fas' : 'far'} fa-star btn-toggle-adv-fav" 
+                       data-name="${meal.name}" 
+                       style="color: #F1C40F; cursor: pointer; font-size: 1.1rem; padding: 5px;" 
+                       title="Favorit"></i>
+                </div>
+            </div>
+            <p style="margin:0; font-size:0.8rem; color:var(--text-muted); font-style:italic;">${meal.recipe}</p>
+        </div>
+        `;
+    });
+
+    list.innerHTML = html;
+
+    // Favoriti toggle u advisor listi
+    document.querySelectorAll('.btn-toggle-adv-fav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Ne želimo aktivaciju obroka
+            const mealName = e.currentTarget.getAttribute('data-name');
+            let savedFavs = JSON.parse(localStorage.getItem('calorieShark_advisorFavs') || '[]');
+            if (savedFavs.includes(mealName)) {
+                savedFavs = savedFavs.filter(n => n !== mealName);
+            } else {
+                savedFavs.push(mealName);
+            }
+            localStorage.setItem('calorieShark_advisorFavs', JSON.stringify(savedFavs));
+            renderSharkAdvisor(); // Refresh list to show new star state
+        });
+    });
+
+    // Attach click listener for automatic filling (instant confirm)
+    document.querySelectorAll('.advisor-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const mealData = JSON.parse(e.currentTarget.getAttribute('data-meal'));
+
+            if (mealData.tags && mealData.tags.includes('favorite') && mealData.originalItems) {
+                // Za već spremljene favorite iz povijesti
+                currentUnsavedMeal = { items: mealData.originalItems };
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                saveMealToServer(); // INSTANT SAVE
+            } else {
+                // Za objekte iz advisor baze (bypassing AI)
+                const fakeAI = {
+                    items: [{
+                        name: mealData.name,
+                        estimatedWeightG: 100, // standardna porcija
+                        kcalPer100g: mealData.kcal,
+                        macrosPer100g: {
+                            carbs: mealData.carbs,
+                            protein: mealData.protein,
+                            fat: mealData.fat
+                        }
+                    }]
+                };
+                renderAIResult(fakeAI); // Prikazuje pending UI tako da korisnik vidi što se sprema
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    });
 }
 
 async function handleImageUpload(e) {
@@ -475,6 +1037,14 @@ btnConfirmCrop.addEventListener('click', async () => {
     if (!cropperInstance) return;
     if (isCooldown) return;
 
+    // Provjera energije netom prije slanja
+    if (!useVisionEnergy()) {
+        alert("Shark Energy Low! 🦈⚡ Ponestalo ti je energije (munja) za AI skeniranje. Pričekaj 20 minuta da se regenerira jedna munja ili unesi tekstualno.");
+        cropModal.classList.add('hidden');
+        if (cropperInstance) cropperInstance.destroy();
+        return;
+    }
+
     // Uzmi izrezani dio
     const canvas = cropperInstance.getCroppedCanvas({
         maxWidth: 1024,
@@ -524,7 +1094,11 @@ btnConfirmCrop.addEventListener('click', async () => {
 
     } catch (err) {
         console.error("Greska pri uploadu okrnjene slike:", err);
-        mealsList.innerHTML = `<div class="empty-state" style="color:#FF2A2A;"><i class="fas fa-exclamation-triangle"></i><p>Greska: ${err.message}</p></div>`;
+        let errorMsg = err.message;
+        if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("429")) {
+            errorMsg = "Gemini API limit! 🦈 Šarka je trenutno prezauzeta analizom (kvota potrošena). Pokušaj ponovno za koju minutu.";
+        }
+        mealsList.innerHTML = `<div class="empty-state" style="color:#FF2A2A;"><i class="fas fa-exclamation-triangle"></i><p>Greška: ${errorMsg}</p></div>`;
     }
 });
 
@@ -570,7 +1144,7 @@ async function handleTextUpload(text) {
     // Scrolaj na vrh
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Prekidač za hlađenje
+    // Prekidač za hlađenje SAMO ako idemo na Google API
     startCooldown();
 
     try {
@@ -602,7 +1176,11 @@ async function handleTextUpload(text) {
 
     } catch (err) {
         console.error("Greska pri uploadu teksta:", err);
-        mealsList.innerHTML = `<div class="empty-state" style="color:#FF2A2A;"><i class="fas fa-exclamation-triangle"></i><p>AI greška: ${err.message}</p></div>`;
+        let errorMsg = err.message;
+        if (errorMsg.includes("quota") || errorMsg.includes("limit") || errorMsg.includes("429")) {
+            errorMsg = "Gemini API limit! 🦈 Previše smo pitali Šarku u kratkom vremenu. Pokušaj ponovno za minutu.";
+        }
+        mealsList.innerHTML = `<div class="empty-state" style="color:#FF2A2A;"><i class="fas fa-exclamation-triangle"></i><p>AI greška: ${errorMsg}</p></div>`;
     }
 }
 
@@ -638,7 +1216,6 @@ function handleVoiceInput() {
     recognition.onspeechend = function () {
         recognition.stop();
         btnVoice.classList.remove('recording-pulse');
-        inpTextMeal.placeholder = "Upiši ili izgovori obrok...";
     };
 
     recognition.onerror = function (event) {
@@ -709,6 +1286,7 @@ function drawPendingMealUI() {
             <strong style="font-size:1.2rem;">UKUPNO:</strong>
             <strong style="font-size:1.5rem; color:${isExercise ? '#00D084' : 'var(--accent-orange)'};">${Math.abs(totalKcal)} kcal</strong>
         </div>
+        ${!isExercise ? `<button id="btnAddMissingItem" class="secondary-btn" style="width:100%; margin-bottom:15px; font-size:0.9rem; border: 1px dashed var(--accent-cyan); color: var(--accent-cyan);"><i class="fas fa-plus"></i> Dodaj sastojak koga AI nije skužio</button>` : ''}
         <button id="btnConfirmMeal" class="primary-btn" style="background:${isExercise ? '#00D084' : 'var(--accent-orange)'};"><i class="fas fa-check"></i> ${confirmBtnTxt}</button>
         <button id="btnCancelMeal" class="icon-btn" style="width:100%; margin-top:10px; color:var(--text-muted); font-size:1rem;"><i class="fas fa-times"></i> Odbaci</button>
     </div>`;
@@ -732,12 +1310,68 @@ function drawPendingMealUI() {
         renderDailyMeals(); // Osvjezi trenutnu listu i povrati stari obrok (ako editiramo)
         updateDashboardUI();
     });
+
+    const btnAddMissing = document.getElementById('btnAddMissingItem');
+    if (btnAddMissing) {
+        btnAddMissing.addEventListener('click', handleMissingItemAdd);
+    }
+}
+
+async function handleMissingItemAdd() {
+    const itemName = prompt("Upišite naziv sastojka kojeg je AI zaboravio (npr. 'kruh', 'maslinovo ulje'):");
+    if (!itemName || itemName.trim() === '') return;
+
+    // Prvo provjeri lokalnu bazu
+    if (typeof searchLocalFoodDB === 'function') {
+        const localHit = searchLocalFoodDB(itemName.trim());
+        if (localHit) {
+            currentUnsavedMeal.items.push(localHit);
+            drawPendingMealUI();
+            return;
+        }
+    }
+
+    // Ako nemamo lokalno, šalji na AI API
+    const prevText = mealsList.innerHTML;
+    mealsList.innerHTML = `<div class="empty-state" style="color:var(--accent-cyan);"><i class="fas fa-spinner fa-spin"></i><p>Pitam AI za: ${itemName}...</p></div>`;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8',
+            },
+            body: JSON.stringify({
+                action: 'analyzeMeal',
+                textDescription: itemName
+            })
+        });
+
+        const responseText = await response.text();
+        const result = JSON.parse(responseText);
+
+        if (result.status === 'success' && result.data && result.data.items && result.data.items.length > 0) {
+            currentUnsavedMeal.items.push(result.data.items[0]); // Dodaj prvi AI item
+            drawPendingMealUI();
+        } else {
+            alert("AI nažalost nije prepoznao: " + itemName);
+            mealsList.innerHTML = prevText;
+            drawPendingMealUI(); // rebind
+        }
+    } catch (err) {
+        alert("Greška sa spajanjem na AI: " + err.message);
+        mealsList.innerHTML = prevText;
+        drawPendingMealUI(); // rebind
+    }
 }
 
 async function saveMealToServer() {
     const btn = document.getElementById('btnConfirmMeal');
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> SPREMAM...`;
-    btn.disabled = true;
+    if (btn) {
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> SPREMAM...`;
+        btn.disabled = true;
+    }
 
     // Preracunavanje totala makrosa
     let totals = { kcal: 0, carbs: 0, protein: 0, fat: 0 };
@@ -853,6 +1487,14 @@ function renderDailyMeals() {
                 </div>
                 <div style="font-size:1.3rem; font-weight:900; color:var(--accent-orange); margin-left:15px; text-align:right;">
                     ${meal.totals.kcal < 0 ? '<span style="color:#00D084"><i class="fas fa-fire"></i> ' + Math.abs(Math.round(meal.totals.kcal)) + '</span>' : Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
+                    ${meal.totals.kcal > 0 ? `
+                        <div style="margin-top:5px;">
+                            <i class="${meal.isFavorite ? 'fas' : 'far'} fa-star btn-toggle-fav" 
+                               data-index="${originalIndex}" 
+                               style="color: #F1C40F; cursor: pointer; font-size: 1.1rem;" 
+                               title="Označi kao favorit"></i>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
             
@@ -888,6 +1530,20 @@ function renderDailyMeals() {
             editMeal(index);
         });
     });
+
+    document.querySelectorAll('.btn-toggle-fav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.currentTarget.getAttribute('data-index'));
+            toggleFavorite(index);
+        });
+    });
+}
+
+function toggleFavorite(index) {
+    const meal = dailyData.meals[index];
+    meal.isFavorite = !meal.isFavorite;
+    saveDailyData();
+    renderDailyMeals();
 }
 
 function editMeal(index) {
@@ -1007,11 +1663,21 @@ function renderStatsUI(meals) {
 
     // 1. Grupiranje kalorija po datumima za Chart.js
     const dailySums = {};
+    const dailyMacros = {}; // Za pie chart najnovijeg dana
+
     meals.forEach(m => {
         // Pretvaramo "dd.MM.yyyy" u kraći format "dd.MM."
         const shortDate = m.date.substring(0, 5);
         if (!dailySums[shortDate]) dailySums[shortDate] = 0;
         dailySums[shortDate] += m.totals.kcal;
+
+        // Racunamo pozitivne (unešene) makrose samo za zadnji/najnoviji vizualno
+        if (m.totals.kcal > 0) {
+            if (!dailyMacros[m.date]) dailyMacros[m.date] = { carbs: 0, protein: 0, fat: 0 };
+            dailyMacros[m.date].carbs += (m.totals.carbs || 0);
+            dailyMacros[m.date].protein += (m.totals.protein || 0);
+            dailyMacros[m.date].fat += (m.totals.fat || 0);
+        }
     });
 
     const labels = Object.keys(dailySums).reverse();
@@ -1077,6 +1743,68 @@ function renderStatsUI(meals) {
             }
         }
     });
+
+    // --- MACRO CHART LOGIKA ---
+    // Dohvaćamo najnoviji zabilježeni datum na listi za pie chart
+    const latestDate = meals[0].date;
+    let todayMacros = dailyMacros[latestDate] || { carbs: 0, protein: 0, fat: 0 };
+
+    // Inject kanvas dinamicki poslije grafa od kcal (ako vec ne postoji)
+    const statsContainer = document.getElementById('kcalChart').parentElement;
+    let macroCanvas = document.getElementById('macroChart');
+    if (!macroCanvas) {
+        macroCanvas = document.createElement('canvas');
+        macroCanvas.id = 'macroChart';
+        macroCanvas.width = 400;
+        macroCanvas.height = 200;
+        macroCanvas.style.marginTop = '20px';
+        statsContainer.appendChild(macroCanvas);
+    }
+
+    const ctxMacro = macroCanvas.getContext('2d');
+    if (window.macroChartInstance) {
+        window.macroChartInstance.destroy();
+    }
+
+    const cG = Math.round(todayMacros.carbs);
+    const pG = Math.round(todayMacros.protein);
+    const fG = Math.round(todayMacros.fat);
+    const totalG = cG + pG + fG;
+
+    // Ako je total 0 da izbjegnemo NaN divisuon
+    const pC = totalG > 0 ? Math.round((cG / totalG) * 100) : 0;
+    const pP = totalG > 0 ? Math.round((pG / totalG) * 100) : 0;
+    const pF = totalG > 0 ? Math.round((fG / totalG) * 100) : 0;
+
+    window.macroChartInstance = new Chart(ctxMacro, {
+        type: 'doughnut',
+        data: {
+            labels: [
+                `Ugljikohidrati (${pC}%)`,
+                `Proteini (${pP}%)`,
+                `Masti (${pF}%)`
+            ],
+            datasets: [{
+                data: [cG, pG, fG],
+                backgroundColor: ['#00A8B5', '#00D084', '#FF2A2A'], // Cyan, Green, Red
+                borderWidth: 2,
+                borderColor: '#1E293B' // Da pase uz dark background
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '65%',
+            plugins: {
+                title: {
+                    display: true,
+                    text: `Makronutrijenti za ${latestDate}`,
+                    color: '#7f8c8d'
+                },
+                legend: { position: 'right' }
+            }
+        }
+    });
+
 
     // 2. Iscrtavanje kronološke liste ispod grafa
     let html = '';
@@ -1186,26 +1914,25 @@ function setupExerciseEvents() {
             burnedKcal = Math.round((ex.met * 3.5 * userProfile.weight / 200) * val);
         }
 
-        // Formiramo "lažni" AI odgovor za Pending UI, ali s negativnim kalorijama i 0 makro
-        const fakeAIResponse = {
-            items: [
-                {
-                    name: ex.met === 0 ? `[VJEŽBA] Garmin / Smartwatch` : `[VJEŽBA] ${ex.name} (${val} min)`,
-                    estimatedWeightG: val, // Hack da UI gramaže postane UI minute
-                    kcalPer100g: -burnedKcal, // -burnedKcal za 1 minutu hack
-                    macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
-                }
-            ]
-        };
+        // Formiramo "lažni" AI odgovor i direktno spremamo bez Pending UI
+        const fakeItems = [
+            {
+                name: ex.met === 0 ? `[VJEŽBA] Garmin / Smartwatch` : `[VJEŽBA] ${ex.name} (${val} min)`,
+                estimatedWeightG: 100, // standardni factor
+                kcalPer100g: -burnedKcal,
+                macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
+            }
+        ];
 
         // Sakrivamo modal
         exerciseModal.classList.add('hidden');
         inpExerciseDuration.value = 30; // reset
 
-        // Prikazujemo u pending UI (Hack: stavljam estimatedWeightG na 100 da factor bude 1)
-        fakeAIResponse.items[0].estimatedWeightG = 100;
+        // Postavljamo globalno da se može spremiti
+        currentUnsavedMeal = { items: fakeItems };
 
-        renderAIResult(fakeAIResponse);
+        // Instant spremanje na server (i u lokalni dnevnik)
+        saveMealToServer();
     });
 }
 
