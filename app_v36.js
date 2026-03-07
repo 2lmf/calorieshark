@@ -7,7 +7,7 @@ window.onerror = function (msg, url, lineNo, columnNo, error) {
     }
     return false;
 };
-console.log("CalorieShark v51 Initializing...");
+console.log("CalorieShark v61 Initializing...");
 
 // --- TRANSLATIONS (i18n) ---
 const TRANSLATIONS = {
@@ -35,6 +35,8 @@ const TRANSLATIONS = {
         dash_fat: "MASTI",
         dash_divider: "DNEVNIK OBROKA",
         adv_title: "Trebaš ideju?",
+        fav_title: "Favoriti",
+        fav_empty: "Još niste dodali niti jednu namirnicu u favorite.",
         dash_empty: "Nema zabilježenih obroka danas.",
         dash_input_placeholder: "Upiši ili izgovori obrok...",
         mod_ex_title: "Zabilježi Trening",
@@ -84,7 +86,9 @@ const TRANSLATIONS = {
         mod_steps_kcal: "Potrošene kalorije:",
         mod_steps_hint: "Aplikacija automatski računa kalorije prema tvojoj masi, ali ih možeš korigirati.",
         btn_edit: "Uredi",
-        btn_delete: "Izbriši"
+        btn_delete: "Izbriši",
+        meal_del_confirm: "Jeste li sigurni da želite obrisati ovaj obrok?",
+        ex_del_confirm: "Jeste li sigurni da želite obrisati ovaj trening?"
     },
     en: {
         onb_lang_select: "SELECT LANGUAGE",
@@ -159,7 +163,9 @@ const TRANSLATIONS = {
         mod_steps_kcal: "Calories burned:",
         mod_steps_hint: "The app automatically calculates calories based on your mass, but you can correct them.",
         btn_edit: "Edit",
-        btn_delete: "Delete"
+        btn_delete: "Delete",
+        meal_del_confirm: "Are you sure you want to delete this meal?",
+        ex_del_confirm: "Are you sure you want to delete this workout?"
     }
 };
 
@@ -230,6 +236,7 @@ let userProfile = {
     gender: 'male',
     lang: 'hr',
     age: 30,
+    favorites: [],
     height: 180,
     weight: 85,
     tdee: 2500,
@@ -265,12 +272,13 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzydHpTGEyigElRio20Il0g
 // --- DOM ELEMENTS ---
 const screens = {
     onboarding: document.getElementById('screenOnboarding'),
+    settings: document.getElementById('screenSettings'),
     dashboard: document.getElementById('screenDashboard'),
     stats: document.getElementById('screenStats'),
-    settings: document.getElementById('screenSettings')
+    favorites: document.getElementById('screenFavorites')
 };
 
-const fabCamera = document.getElementById('fabCamera');
+const fabMain = document.getElementById('fabMain');
 const inpCamera = document.getElementById('inpCamera');
 const mealsList = document.getElementById('mealsList');
 const textInputBar = document.getElementById('textInputBar');
@@ -326,8 +334,8 @@ function startCooldown() {
     btnVoice.style.pointerEvents = 'none';
     inpTextMeal.disabled = true;
     inpCamera.disabled = true;
-    fabCamera.style.opacity = '0.5';
-    fabCamera.style.pointerEvents = 'none';
+    fabMain.style.opacity = '0.5';
+    fabMain.style.pointerEvents = 'none';
 
     // Prvi render tick
     inpTextMeal.placeholder = `Hlađenje sustava: ${timeLeft}s...`;
@@ -349,8 +357,8 @@ function startCooldown() {
             btnVoice.style.pointerEvents = 'auto';
             inpTextMeal.disabled = false;
             inpCamera.disabled = false;
-            fabCamera.style.opacity = '1';
-            fabCamera.style.pointerEvents = 'auto';
+            fabMain.style.opacity = '1';
+            fabMain.style.pointerEvents = 'auto';
 
             inpTextMeal.placeholder = origPlaceholder;
             btnConfirmCrop.innerHTML = origCropBtnHtml;
@@ -420,7 +428,7 @@ function checkVisionEnergy() {
             } else {
                 visionEnergy.lastUsed = null; // Full
             }
-            saveVisionEnergy();
+            saveProfile();
         }
     }
     renderVisionEnergy();
@@ -432,7 +440,7 @@ function useVisionEnergy() {
         if (!visionEnergy.lastUsed) {
             visionEnergy.lastUsed = new Date().getTime(); // Start the timer if it wasn't running
         }
-        saveVisionEnergy();
+        saveProfile();
         renderVisionEnergy();
         return true;
     }
@@ -508,6 +516,7 @@ function loadProfile() {
 
     if (saved) {
         userProfile = JSON.parse(saved);
+        if (!userProfile.favorites) userProfile.favorites = [];
 
         // Populate inputs for onboarding
         document.getElementById('inpUsername').value = userProfile.username || '';
@@ -765,7 +774,7 @@ function bindEvents() {
     });
 
     // Camera FAB
-    fabCamera.addEventListener('click', () => {
+    fabMain.addEventListener('click', () => {
         inpCamera.click();
     });
 
@@ -793,6 +802,20 @@ function bindEvents() {
     }
 
     inpCamera.addEventListener('change', handleImageUpload);
+
+    // Favorites screen controls
+    if (document.getElementById('btnOpenFavorites')) {
+        document.getElementById('btnOpenFavorites').addEventListener('click', () => {
+            showScreen('favorites');
+            renderFavoritesList();
+        });
+    }
+
+    if (document.getElementById('btnCloseFavorites')) {
+        document.getElementById('btnCloseFavorites').addEventListener('click', () => {
+            showScreen('dashboard');
+        });
+    }
 
     // Settings Button
     document.getElementById('btnSettings').addEventListener('click', () => {
@@ -992,7 +1015,7 @@ function setupStepsEvents() {
 
     if (btnAddSteps) {
         btnAddSteps.addEventListener('click', () => {
-            inpStepCount.value = dailyData.steps || 5000;
+            inpStepCount.value = dailyData.steps || 0;
             updateStepsPreview();
             stepsModal.classList.remove('hidden');
         });
@@ -1024,8 +1047,9 @@ function setupStepsEvents() {
             dailyData.stepsKcal = stepsKcal;
 
             // 2. Dodaj u dnevnik kao "vježbu"
+            const label = currentLang === 'en' ? '[STEPS]' : '[KORACI]';
             const fakeStepItem = [{
-                name: `[KORACI] ${stepsCount.toLocaleString('hr-HR')} koraka`,
+                name: `${label} ${stepsCount.toLocaleString(currentLang === 'en' ? 'en-US' : 'hr-HR')} koraka`,
                 estimatedWeightG: 100,
                 kcalPer100g: -stepsKcal,
                 macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
@@ -1061,16 +1085,21 @@ function calculateTDEE() {
 }
 
 function showScreen(screenId) {
-    Object.values(screens).forEach(s => s.classList.add('hidden'));
-    document.getElementById('fabContainer').classList.add('hidden'); // Hide the new container
-    fabCamera.classList.add('hidden');
-    textInputBar.classList.add('hidden');
+    Object.values(screens).forEach(s => {
+        if (s) s.classList.add('hidden');
+    });
+
+    const fabContainer = document.getElementById('fabContainer');
+    if (fabContainer) fabContainer.classList.add('hidden');
+
+    if (fabMain) fabMain.classList.add('hidden');
+    if (textInputBar) textInputBar.classList.add('hidden');
 
     if (screenId === 'dashboard') {
-        screens.dashboard.classList.remove('hidden');
-        fabCamera.classList.remove('hidden');
-        document.getElementById('fabContainer').classList.remove('hidden'); // Show container instead of just fab
-        textInputBar.classList.remove('hidden');
+        if (screens.dashboard) screens.dashboard.classList.remove('hidden');
+        if (fabMain) fabMain.classList.remove('hidden');
+        if (fabContainer) fabContainer.classList.remove('hidden');
+        if (textInputBar) textInputBar.classList.remove('hidden');
     } else if (screenId === 'onboarding') {
         screens.onboarding.classList.remove('hidden');
     } else if (screenId === 'stats') {
@@ -1080,6 +1109,8 @@ function showScreen(screenId) {
         document.querySelector('.brand-text').style.cursor = 'pointer';
     } else if (screenId === 'settings') {
         screens.settings.classList.remove('hidden');
+    } else if (screenId === 'favorites') {
+        screens.favorites.classList.remove('hidden');
     }
 }
 
@@ -1159,8 +1190,10 @@ function updateDashboardUI() {
 
     const burnedTrack = document.getElementById('kcalBurnedTrack');
     const stepsTrack = document.getElementById('stepsTrack');
+    const workoutTrack = document.getElementById('workoutTrack');
     const stepsCircumference = 238; // r=38 -> 2 * PI * 38 ≈ 238
 
+    // Green sum-all track (Main circle)
     if (burned > 0) {
         const pctBurned = Math.min(burned / target, 1);
         burnedTrack.style.strokeDasharray = `${pctBurned * circumference} ${circumference}`;
@@ -1169,16 +1202,32 @@ function updateDashboardUI() {
         burnedTrack.style.strokeDasharray = `0 ${circumference}`;
     }
 
-    // Steps Ring (Orange)
-    if (stepsTrack) {
+    // Segmented Inner Rings (Orange Steps + Blue Workout)
+    if (stepsTrack && workoutTrack) {
         const stepsKcal = dailyData.stepsKcal || 0;
+        const workoutKcal = Math.max(0, burned - stepsKcal);
+
+        // Steps (Orange)
         if (stepsKcal > 0) {
             const pctSteps = Math.min(stepsKcal / target, 1);
             stepsTrack.style.strokeDasharray = `${pctSteps * stepsCircumference} ${stepsCircumference}`;
-            stepsTrack.style.opacity = "1";
+            stepsTrack.style.display = "block";
         } else {
             stepsTrack.style.strokeDasharray = `0 ${stepsCircumference}`;
-            stepsTrack.style.opacity = "0.3";
+            stepsTrack.style.display = "none";
+        }
+
+        // Workout (Blue) - Starts where steps end
+        if (workoutKcal > 0) {
+            const pctWorkout = Math.min(workoutKcal / target, 1);
+            const pctSteps = Math.min(stepsKcal / target, 1);
+            workoutTrack.style.strokeDasharray = `${pctWorkout * stepsCircumference} ${stepsCircumference}`;
+            workoutTrack.style.strokeDashoffset = `-${pctSteps * stepsCircumference}`;
+            workoutTrack.style.display = "block";
+        } else {
+            workoutTrack.style.strokeDasharray = `0 ${stepsCircumference}`;
+            workoutTrack.style.strokeDashoffset = "0";
+            workoutTrack.style.display = "none";
         }
     }
 
@@ -1359,7 +1408,17 @@ function renderSharkAdvisor() {
                 savedFavs.push(mealName);
             }
             localStorage.setItem('calorieShark_advisorFavs', JSON.stringify(savedFavs));
-            renderSharkAdvisor(); // Refresh list to show new star state
+            // renderSharkAdvisor(); // Refresh skinut po zahtjevu korisnika - v60
+
+            // Samo vizualno promijeni zvjezdicu bez refresha cijele liste
+            const icon = e.currentTarget;
+            if (savedFavs.includes(mealName)) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+            }
         });
     });
 
@@ -1375,9 +1434,10 @@ function renderSharkAdvisor() {
                 saveMealToServer(); // INSTANT SAVE
             } else {
                 // Za objekte iz advisor baze (bypassing AI)
+                const localizedName = (currentLang === 'en' && mealData.name_en) ? mealData.name_en : mealData.name;
                 const fakeAI = {
                     items: [{
-                        name: mealData.name,
+                        name: localizedName,
                         estimatedWeightG: 100, // standardna porcija
                         kcalPer100g: mealData.kcal,
                         macrosPer100g: {
@@ -1665,16 +1725,32 @@ function drawPendingMealUI() {
         const currentKcal = Math.round(item.kcalPer100g * factor);
         totalKcal += currentKcal;
 
+        // Provjeri je li item favorit
+        if (!userProfile.favorites) userProfile.favorites = [];
+        const isFav = userProfile.favorites.some(f => f && f.name === item.name);
+
         html += `
         <div class="meal-item-editor" style="background: rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-bottom:10px; border-left: 3px solid var(--accent-orange);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <strong>${item.name}</strong>
+                <div style="font-weight:bold; font-size:1.1rem; color:var(--text-main); text-align:left; flex-grow:1;">
+                    ${item.name}
+                </div>
+                <button class="icon-btn btn-toggle-user-fav" data-index="${index}" style="font-size:1.3rem; color:${isFav ? 'var(--accent-orange)' : '#ccc'}; border:none; background:transparent; margin-left:10px;">
+                    <i class="${isFav ? 'fas' : 'far'} fa-star"></i>
+                </button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <span style="color:var(--accent-cyan); font-weight:bold;">${currentKcal} kcal</span>
+                ${item.kcalPer100g > 0 ? `
+                <span style="font-size:0.9rem; color:var(--text-muted); text-align:center;">
+                    <i class="fas fa-balance-scale"></i> ${Math.abs(item.kcalPer100g)} kcal / 100g
+                </span>
+                ` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <label style="font-size:0.8rem; color:var(--text-muted);">${i18n('meal_weight_label')}</label>
                 <input type="number" class="gram-input" data-index="${index}" value="${item.estimatedWeightG}" style="width:70px; padding:5px; border-radius:4px; border:1px solid var(--border-color); background:#FAFCFF; color:#2C3E50; text-align:center;">
-                <span style="font-size:0.8rem; color:var(--text-muted);">g</span>
+                <span style="font-size:0.8rem; color:var(--text-muted);">${item.kcalPer100g > 0 ? 'g' : ''}</span>
                 <button class="icon-btn btn-delete-pending" data-index="${index}" style="margin-left:auto; color:#FF2A2A; padding:5px; border:none; background:transparent;"><i class="fas fa-times"></i></button>
             </div>
         </div>`;
@@ -1707,6 +1783,29 @@ function drawPendingMealUI() {
             const newGrams = parseInt(e.target.value) || 0;
             currentUnsavedMeal.items[idx].estimatedWeightG = newGrams;
             drawPendingMealUI(); // Re-render to update calculations
+        });
+    });
+
+    // Attach Listeners za Favorites zvijezdu
+    document.querySelectorAll('.btn-toggle-user-fav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            const item = currentUnsavedMeal.items[idx];
+
+            if (!userProfile.favorites) userProfile.favorites = [];
+            const existingIndex = userProfile.favorites.findIndex(f => f && f.name === item.name);
+
+            if (existingIndex > -1) {
+                userProfile.favorites.splice(existingIndex, 1);
+            } else {
+                userProfile.favorites.push({
+                    name: item.name,
+                    kcalPer100g: item.kcalPer100g,
+                    macrosPer100g: item.macrosPer100g || null
+                });
+            }
+            saveProfile();
+            drawPendingMealUI(); // Re-render da zvijezda promijeni boju
         });
     });
 
@@ -1841,6 +1940,7 @@ async function saveMealToServer() {
 
             // ŠARKOV SUSTAV UČENJA (Nauči nova jela za offline bazu)
             try {
+                const isExercise = totals.kcal < 0; // Define isExercise here
                 if (!isExercise) {
                     let learnedArr = [];
                     const learnedStr = safeLocalStorage.getItem('calorieShark_learnedFoods');
@@ -1925,21 +2025,43 @@ function applyMealToDashboard(items, totals, id = null) {
 
 function renderDailyMeals() {
     if (dailyData.meals.length === 0) {
-        mealsList.innerHTML = `<div class="empty-state"><i class="fas fa-utensils"></i><p>Nema zabilježenih obroka danas.</p></div>`;
+        mealsList.innerHTML = `<div class="empty-state"><i class="fas fa-utensils"></i><p>${i18n('dash_empty')}</p></div>`;
         return;
     }
 
     let html = '';
     // Prikazujemo najnovije na vrhu (već su na početku zbog unshift)
     dailyData.meals.forEach((meal, originalIndex) => {
-        let mealDesc = meal.items.map(item => `${item.name} (${item.estimatedWeightG}g)`).join(', ');
+        let mealDesc = meal.items.map(item => {
+            let itemName = item.name;
+            // On-the-fly localization lookup
+            if (currentLang === 'en' && typeof localFoodDB !== 'undefined') {
+                const dbMatch = localFoodDB.find(f => f.name === item.name);
+                if (dbMatch && dbMatch.name_en) itemName = dbMatch.name_en;
+            }
+            return item.kcalPer100g < 0 ? itemName : `${itemName} (${item.estimatedWeightG}g)`;
+        }).join(', ');
+
+        const isExercise = meal.totals.kcal < 0;
+        let borderColor = isExercise ? "#00D084" : "var(--accent-cyan)";
+        let titleColor = isExercise ? "#00D084" : "var(--text-main)";
+
+        if (isExercise) {
+            if (mealDesc.includes('KORACI') || mealDesc.includes('STEPS')) {
+                borderColor = 'var(--accent-orange)';
+                titleColor = 'var(--accent-orange)';
+            } else {
+                borderColor = '#3498DB';
+                titleColor = '#3498DB';
+            }
+        }
 
         html += `
-        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${meal.totals.kcal < 0 ? '#00D084' : 'var(--accent-cyan)'}; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${borderColor}; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div style="flex:1;">
                     <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:5px;"><i class="fas fa-clock"></i> ${meal.time}</div>
-                    <div style="font-weight:bold; font-size:0.95rem; color: ${meal.totals.kcal < 0 ? '#00D084' : 'var(--text-main)'}; line-height:1.4;">${mealDesc}</div>
+                    <div style="font-weight:bold; font-size:0.95rem; color: ${titleColor}; line-height:1.4;">${mealDesc}</div>
                 </div>
                 <div style="font-size:1.3rem; font-weight:900; color:var(--accent-orange); margin-left:15px; text-align:right;">
                     ${meal.totals.kcal < 0 ? '<span style="color:' + (mealDesc.includes('KORACI') ? 'var(--accent-orange)' : '#00D084') + '"><i class="fas ' + (mealDesc.includes('KORACI') ? 'fa-shoe-prints' : 'fa-fire') + '"></i> ' + Math.abs(Math.round(meal.totals.kcal)) + '</span>' : Math.round(meal.totals.kcal)}<br><span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">kcal</span>
@@ -1973,7 +2095,7 @@ function renderDailyMeals() {
         btn.addEventListener('click', (e) => {
             const index = parseInt(e.currentTarget.getAttribute('data-index'));
             const isExercise = dailyData.meals[index].totals.kcal < 0;
-            const message = isExercise ? "Jeste li sigurni da želite obrisati ovaj trening?" : "Jeste li sigurni da želite obrisati ovaj obrok?";
+            const message = isExercise ? i18n('ex_del_confirm') : i18n('meal_del_confirm');
             if (confirm(message)) {
                 deleteMeal(index);
             }
@@ -2038,6 +2160,13 @@ async function deleteMeal(index, skipRender = false) {
     if (meal.totals.kcal < 0) {
         dailyData.totalBurned = (dailyData.totalBurned || 0) - Math.abs(meal.totals.kcal);
         if (dailyData.totalBurned < 0) dailyData.totalBurned = 0;
+
+        // Ako je ovo bio unos koraka, resetiraj vrijednosti koraka u dnevnim podacima
+        const firstItemName = meal.items && meal.items.length > 0 ? meal.items[0].name : '';
+        if (firstItemName.includes('[KORACI]') || firstItemName.includes('[STEPS]')) {
+            dailyData.steps = 0;
+            dailyData.stepsKcal = 0;
+        }
     } else {
         dailyData.totalKcal -= meal.totals.kcal;
         dailyData.carbs -= meal.totals.carbs;
@@ -2065,6 +2194,63 @@ async function deleteMeal(index, skipRender = false) {
         renderDailyMeals();
         updateDashboardUI();
     }
+}
+
+// ==========================================
+// FAVORITES LOGIKA
+// ==========================================
+function renderFavoritesList() {
+    const list = document.getElementById('favoritesList');
+    if (!userProfile.favorites || userProfile.favorites.length === 0) {
+        list.innerHTML = `<div class="empty-state"><i class="far fa-star" style="font-size:3rem; margin-bottom:15px;"></i><p>${i18n('fav_empty')}</p></div>`;
+        return;
+    }
+
+    let html = '';
+    userProfile.favorites.forEach((fav, index) => {
+        html += `
+        <div style="background: var(--bg-card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--accent-orange);">
+            <div style="flex-grow: 1; cursor: pointer;" class="fav-item" data-index="${index}">
+                <div style="font-weight: bold; color: var(--text-main); font-size: 1.1rem;">${fav.name}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-balance-scale"></i> ${Math.abs(fav.kcalPer100g)} kcal / 100g</div>
+            </div>
+            <button class="icon-btn btn-remove-fav" data-index="${index}" style="color: #FF2A2A; border: none; background: transparent; padding: 10px; font-size: 1.2rem;">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+        `;
+    });
+    list.innerHTML = html;
+
+    // Attach listeners
+    document.querySelectorAll('.fav-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            const fav = userProfile.favorites[idx];
+
+            // Postavi ga kao pending meal
+            currentUnsavedMeal = {
+                items: [{
+                    name: fav.name,
+                    estimatedWeightG: 100, // Automatskih 100g
+                    kcalPer100g: fav.kcalPer100g,
+                    macrosPer100g: fav.macrosPer100g || null
+                }]
+            };
+            editingMealIndex = null;
+            showScreen('dashboard');
+            drawPendingMealUI();
+        });
+    });
+
+    document.querySelectorAll('.btn-remove-fav').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            userProfile.favorites.splice(idx, 1);
+            saveProfile();
+            renderFavoritesList();
+        });
+    });
 }
 
 // ==========================================
@@ -2370,10 +2556,11 @@ function setupExerciseEvents() {
             burnedKcal = Math.round((ex.met * 3.5 * userProfile.weight / 200) * val);
         }
 
-        // Formiramo "lažni" AI odgovor i direktno spremamo bez Pending UI
+        // Formiramo "lazni" AI odgovor i direktno spremamo bez Pending UI
+        const label = currentLang === 'en' ? '[WORKOUT]' : '[VJEZBA]';
         const fakeItems = [
             {
-                name: ex.met === 0 ? `[VJEŽBA] Garmin / Smartwatch` : `[VJEŽBA] ${ex.name} (${val} min)`,
+                name: ex.met === 0 ? `${label} Garmin / Smartwatch` : `${label} ${ex.name} (${val} min)`,
                 estimatedWeightG: 100, // standardni factor
                 kcalPer100g: -burnedKcal,
                 macrosPer100g: { carbs: 0, protein: 0, fat: 0 }
